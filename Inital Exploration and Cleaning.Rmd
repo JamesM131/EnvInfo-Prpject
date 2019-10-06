@@ -8,6 +8,8 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+library(tsibble)
+library(lubridate)
 ```
 
 # Read the data
@@ -176,6 +178,12 @@ duplicated_data %>%
 It seems that there are a number of very low counts for Rio, which leads me to believe that these are additional observations of fires and an appropriate treatment may be adding the counts for each year. This is less likely to affect the overall number, as the additions are outweighed by the higher valued results.
 
 
-
-
+## Verdict
+It has been decided that for the time being, these instances will be removed and the models both with and without them will be compared. 
+```{r}
+fires_tsibble <- fires_clean %>% 
+  filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>% 
+  filter(duplicated(.) == FALSE) %>% 
+  as_tsibble(index = date_month, key = state)
+```
 
