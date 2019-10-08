@@ -1,4 +1,7 @@
-fires_a <- fires_tsibble[fires_tsibble$state == "Acre",]
+library(tidyverse)
+fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
+
+fires_a <- fires_clean[fires_clean$state == "Acre",]
 plot.ts(fires_a$date_month, fires_a$number)
 
 MA <- c()
