@@ -28,17 +28,29 @@ fires_date <- fires %>%
     TRUE                    ~ NA_character_
   ),
   day = 1) %>%
-  mutate(date_month = lubridate::ymd(glue::glue("{year}-{month_clean}-{day}")))
+  mutate(date_month = lubridate::ymd(glue::glue("{year}-{month_clean}-{day}"))) %>%
+  mutate(date_index = yearmonth(date_month))
 
 # Creating the clean fire object
 fires_clean <-
   fires_date %>%
   filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
   filter(duplicated(.) == FALSE) %>%
-  as_tsibble(index = date_month, key = state) %>%
-  select(-c(month, date, day)) %>%
-  rename(date = date_month, month = month_clean, fires = number)
+  as_tsibble(index = date_index, key = state) %>%
+  select(-c(month, date, day, date_month)) %>%
+  rename(date = date_index, month = month_clean, fires = number)
+
+fires_clean_all <-
+  fires_date %>%
+  filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
+  filter(duplicated(.) == FALSE) %>%
+  group_by(date_index) %>%
+  summarise(fires = sum(number)) %>%
+  as_tsibble(index = date_index) %>%
+  rename(date = date_index)
+
 
 # Save the clean data
 write_rds(fires_clean, here::here("data", "fires_clean.rds"))
+write_rds(fires_clean_all, here::here("data", "fires_clean_all.rds"))
 

@@ -1,0 +1,74 @@
+---
+title: "Spatial Considerations"
+author: "James Monks"
+date: "09/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+# Some thoughts
+
+Just some thoughts of some things that we could include for the report based on what Than mentioned in class.
+
+* Divide the number of fires by the area of the state to prevent size making the occurrence rates between states differ too much
+
+* Grab the coordinated of the centre of the states and do some spatial statistics with these (mention that this is based on the centre of the state and may not be representative of the actual distances because the actual locations of the fires were not recorded)
+
+
+```{r}
+fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
+```
+
+
+```{r}
+state_list <- fires_clean %>% 
+  pull(state) %>% 
+  unique() %>% 
+  stringi::stri_enc_toutf8()
+
+problem_state <- state_list[[12]]
+
+state_list[[12]] <- "Para" # This page has both terms on it so Para seems like a logical guess https://ccsearch.creativecommons.org/photos/2a1131c1-9ccf-4b65-b550-6d1e5e974795
+
+
+
+
+state_list_clean <- state_list %>% 
+  map_chr(paste, " Brazil")
+
+```
+
+
+
+```{r}
+state_coords <- map_df(state_list_clean, ggmap::geocode)
+```
+
+
+```{r}
+state_coords %>% 
+  geosphere::distm() %>% 
+  round(digits = -5) %>% 
+  as_tibble() %>% 
+  pivot_longer(cols = everything()) %>% 
+  count(value)
+```
+
+
+
+```{r}
+brazil_map <- get_map("Brazil", zoom = 4)
+
+brazil_map %>% 
+  ggmap() + 
+  geom_point(data = state_coords, aes(x = lon, y = lat))
+```
+
+```{r}
+
+```
+
