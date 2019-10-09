@@ -1,0 +1,294 @@
+---
+title: "Forest Fires in Brazil"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##Introduction
+
+
+#The Amazon Dataset
+```{r}
+library(readr)
+fires <- read_csv("amazon.csv")
+head(fires)
+```
+
+##Cleaning the Data
+
+
+
+###James' file for cleaning the data
+A simple plot was produced to understand the data:
+```{r}
+library(tidyverse)
+library(tsibble)
+library(lubridate)
+
+fires %>% 
+  count(date, wt = number) %>% 
+  ggplot(aes(x = date, y = n)) +
+  geom_point()
+```
+
+
+It should be noted that the month terms in the data set are in Portuguese and as such are not passable to standard date conversion functions. These must be translated in order to connect accurate dates to the data. There is an issue with this however, as the term that describes march uses non-standard characters and cannot be directly converted. 
+
+First we need to access the term and store it in an object (this will allow us to reference it directlyl as it is not possible to type it into quotes as far as I am aware). This object is obrained by filtering the data down to only rows that contain some non-alphabetic characters and then taking the first term. It should be noted that there is only one such problem term, so doing this is not an issue.
+
+```{r}
+problem_term <- fires %>% 
+  filter(stringr::str_detect(month, "[^a-zA-Z]")) %>% 
+  slice(1) %>% 
+  pull(month)
+```
+
+
+Now that we have an explicit definition of the problem term: `r problem_term`, it is possible to encode the direct conversions. The date is also created based on these months (using the first day of the month as a day reference).
+
+```{r}
+fires_clean <- fires %>% 
+  mutate(month_clean = case_when(
+    month == "Abril"        ~ "April",
+    month == "Agosto"       ~ "August",
+    month == "Dezembro"     ~ "December",
+    month == "Fevereiro"    ~ "February",
+    month == "Janeiro"      ~ "January",
+    month == "Julho"        ~ "July",
+    month == "Junho"        ~ "June",
+    month == "Maio"         ~ "May",
+    month == problem_term     ~  "March",
+    month == "Novembro"     ~ "November",
+    month == "Outubro"      ~ "October",
+    month == "Setembro"     ~ "September", 
+    TRUE                    ~ NA_character_
+  ), 
+  day = 1) %>% 
+  mutate(date_month = lubridate::ymd(glue::glue("{year}-{month_clean}-{day}")))
+```
+
+# Creating a time aware data frame
+As this is monthly data, we want to explicitly encode this in the data set using the yearmonth function to create an index. A key is given as there is data repeated accross states (This may or may not be aggregated later, but it is good to maintain as much information as possible for as long as possible).
+
+Ther following code gives an error saying that the index-key pairings are not unique. This means that there is either a more granular grouping variable that should be used, or there is some ambiguity in the data. Lets look into it. 
+
+```
+library(tsibble)
+
+fires_tsibble <- fires_clean %>% 
+  mutate(year_month = yearmonth(date_month)) %>% 
+  as_tsibble(index = year_month, key = state)
+  
+```
+
+
+To figure out what is causing these provlems, the duplicates function can be used in place of as_tsibble to return the cases in which there are issues. 
+```{r}
+fires_duplicates <- fires_clean %>% 
+  mutate(year_month = yearmonth(date_month)) %>% 
+  duplicates(index = year_month, key = state)
+head(fires_duplicates)
+```
+
+Lets check out the states for these duplicates.
+```{r}
+fires_duplicates %>% 
+  count(state)
+```
+
+
+It seems that there are small number of duplicates for Alagoas, a large number of duplicated for both Mato Grosso and Paraibam and a very large number for Rio. It is interesting to note that Mato Grosso and Paraiba have exactly the same number of duplicates and we will check whether they are occurring at the same times. 
+
+```{r}
+duplicate_times <- fires_duplicates %>% 
+  select(date_month, state)
+duplicate_times
+```
+
+
+```{r}
+mato_times <- duplicate_times %>% 
+  filter(state == "Mato Grosso")
+
+paraiba_times <- duplicate_times %>% 
+  filter(state == "Paraiba")
+```
+
+```{r}
+all(mato_times$date_month == paraiba_times$date_month)
+```
+
+So we have confirmed that they have duplicated data at the exact same times. This data may have been mixed between the two groups, or may have been recorded by the sam agency and was exposed to the same level of confusion 
+
+Now it should also be looked into whether this is simply a double counting of the data, or if there have been different counts recorded for these times.
+
+
+
+
+```{r}
+duplicated_data <- duplicate_times %>% 
+  inner_join(fires_clean)
+head(duplicated_data, 10)
+```
+
+It is immedeiately obvious that the duplicated data for Alagoas is simply a repeated count, and as such repetitions can be removed. This is not true for Mato Grosso however, as the numbers seem to difer differently each time (i.e. in the first occurrence they are the same, in the second it seems like a 2 has either been added by accident or forgotten and in the third there seems to be no relationship)
+
+
+```{r}
+duplicated_data %>% 
+  filter(state == "Mato Grosso") %>% 
+  group_by(date_month) %>% 
+  summarise(mean= mean(number), sd = sd(number)) %>% 
+  pull(sd) %>% 
+  mean()
+  # summarise(mean= mean(mean), sd = mean(sd))
+  
+```
+
+On inspection of this data it seems to be inconsistent throughout, as such this state should be removed from the data. 
+
+Looking into the same times for the Paraiba state. 
+```{r}
+duplicated_data %>% 
+  filter(state == "Paraiba") %>% 
+  group_by(date_month) %>% 
+  summarise(mean= mean(number), sd = sd(number)) %>% 
+  pull(sd) %>% 
+  mean()
+```
+
+
+The average standard deviation is about half that of the Mato Grosso Duplicates, but is still high. It may ba appropriate to give this the same treatment of removal, however, there is an argument to be made for replacing counts with the mean for that time. 
+
+
+Now looking at Rio
+```{r}
+duplicated_data %>% 
+  filter(state == "Rio") 
+```
+
+
+```{r}
+duplicated_data %>% 
+  filter(state == "Rio") %>% 
+  ggplot(aes(x = number)) +
+  geom_histogram()
+```
+
+It seems that there are a number of very low counts for Rio, which leads me to believe that these are additional observations of fires and an appropriate treatment may be adding the counts for each year. This is less likely to affect the overall number, as the additions are outweighed by the higher valued results.
+
+
+# Verdict
+It has been decided that for the time being, these instances will be removed and the models both with and without them will be compared. 
+```{r}
+fires_tsibble <- fires_clean %>% 
+  filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>% 
+  filter(duplicated(.) == FALSE) %>% 
+  as_tsibble(index = date_month, key = state)
+```
+
+
+
+
+##De-seasoning the Data
+
+
+
+###Josh' codes
+```{r}
+library(tidyverse)
+fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
+
+fires_a <- fires_clean[fires_clean$state == "Acre",]
+plot.ts(fires_a$date_month, fires_a$number)
+
+MA <- c()
+CMA <- c()
+
+for(i in 1:239-3){
+  MA[i+1] <- (fires_a$number[i] + fires_a$number[i+1]
+              + fires_a$number[i+2] + fires_a$number[i+3])/4
+}
+
+for(i in 1:(239)-4){
+  CMA[i+2] <- (MA[i+1] + MA[i+2])/2
+}
+
+MA[238] <- NA
+MA[239] <- NA
+CMA[238] <- NA
+CMA[239] <- NA
+
+
+n_alt <- c()
+
+for(i in 3:(239)-1){
+  n_alt[i] <- fires_a$number[i]/CMA[i]
+}
+n_alt[239] <- NA
+
+fires_b <- as.data.frame(cbind(fires_a, MA, CMA, n_alt))
+
+winter <- subset(fires_b,
+                 fires_b$month_clean == "December" | fires_b$month_clean == "January" | fires_b$month_clean == "February")
+spring <- subset(fires_b,
+                 fires_b$month_clean == "March" | fires_b$month_clean == "April" | fires_b$month_clean == "May")
+summer <- subset(fires_b,
+                 fires_b$month_clean == "June" | fires_b$month_clean == "July" | fires_b$month_clean == "August")
+autumn <- subset(fires_b,
+                 fires_b$month_clean == "September" | fires_b$month_clean == "October" | fires_b$month_clean == "November")
+
+m_alt_winter <- mean(winter$n_alt, na.rm = TRUE)
+m_alt_spring <- mean(spring$n_alt, na.rm = TRUE)
+m_alt_summer <- mean(summer$n_alt, na.rm = TRUE)
+m_alt_autumn <- mean(autumn$n_alt, na.rm = TRUE)
+
+m_alt <- c(m_alt_winter, m_alt_spring, m_alt_summer, m_alt_autumn)
+
+for(i in 1:4){
+  m_alt[i] <- m_alt[i]*4/2.837892
+}
+sum(m_alt)
+
+for(i in 1:length(winter$number)){
+  winter[i,12] <- winter$number[i]/m_alt[1]
+}
+
+for(i in 1:length(spring$number)){
+  spring[i,12] <- spring$number[i]/m_alt[2]
+}
+
+for(i in 1:length(summer$number)){
+  summer[i,12] <- summer$number[i]/m_alt[3]
+}
+
+for(i in 1:length(autumn$number)){
+  autumn[i,12] <- autumn$number[i]/m_alt[4]
+}
+
+data1 <- as.data.frame(rbind(winter,spring,summer,autumn))
+data1$index <- as.numeric(row.names(data1))
+View(data1)
+
+data1 %>%
+  count(date, wt = V12) %>%
+  ggplot(aes(x = date, y = n)) +
+  geom_point()
+
+```
+
+
+
+##Model Specification
+
+##Parameter Estimation
+
+##Model Diagnostics
+
+##Forecasting
+
+##Conclusion
+
