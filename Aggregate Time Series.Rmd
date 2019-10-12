@@ -1,0 +1,154 @@
+---
+title: "Aggregate Time Series"
+author: "James Monks"
+date: "12/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(tibble)
+library(feasts)
+library(fable)
+fires_all <- read_rds(here::here("data", "fires_clean_all.rds"))
+```
+
+# Decomposing Fire Data
+
+The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model. 
+
+```{r}
+fires_all %>% 
+  classical_decomposition() %>% 
+  autoplot()
+```
+
+It can be seen that there is a strong seasonal component with two consistent peaks. The overall trend shows an overall increase, though it is not constantly increasing. 
+
+Now the random term can be examined in closer detail. 
+```{r}
+fires_decomp <- fires_all %>% 
+  classical_decomposition() %>% 
+  na.omit()
+
+fires_ts <- ts(fires_decomp$random)
+acf(fires_ts)
+```
+
+The acf of this data shows an alternating acf, following what appears to follow a wave form shape. This shape has some peaks (both positive and negative), for a high number of lags (see 3, 4, 14, 23). It would be interesting to see this with an increased numbr of lags. 
+
+```{r}
+acf(fires_ts, lag.max = 60)
+```
+
+After displaying the acf for up to 60 lags, it seems that this alternating wave pattern continues, but 23 is the last lag that has any significant influence. 
+
+
+Now observing the pacf.
+```{r}
+pacf(fires_ts)
+```
+
+The pacf funciton for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the acf (through viewing a larger number of lags).
+
+```{r}
+pacf(fires_ts, lag.max = 60)
+```
+
+The lags mentioned above seem to be the most influential, however, these spikes can ve seen in the later lags as well. The overall pattern shows a diminishing alternating effect that trends towards an exagerated version of the acf function. 
+
+
+The results after looking at the acf and pacf do not immediately point to a specific model, as there are a large number of lags that are influential and there seems to be something of a cyclic/seasonal effect in fucntion values. 
+
+# Modelling the Aggregate Time Series
+Noting that there is not a model that is immediately obvious after observing both the pacf and acf, the decomposed data will be modelled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
+
+```{r}
+fires_decomp_models <- fires_decomp %>% 
+  rename(fires_original = fires, fires = random) %>% 
+  as_tsibble() %>% 
+  model(
+    arima = ARIMA(fires), 
+    snaive = SNAIVE(fires)
+  )
+
+fires_decomp_models$arima
+```
+
+* This creates a seasonal ARIMA model with parameters (2, 0, 0) (0, 0, 1). [Explain seasonal arima]
+
+* This also trains a seasonal naive model (random process with seasonal component)
+  * This does not make sense?? if season has been removed why would this work?
+
+
+# Forecasting
+
+```{r}
+fires_decomp_forecast <- fires_decomp_models %>% 
+  forecast(h = "2 years") 
+
+forecast_clean <- fires_decomp_forecast %>% 
+  filter(.model == "arima") %>% 
+  as_tibble() %>% 
+  select(date, fires) %>% 
+  mutate(type = "Model")
+
+
+fires_decomp %>% 
+  select(- fires) %>% 
+  select(date, fires = random) %>% 
+  filter(date >= lubridate::ymd("20100101")) %>% 
+  mutate(type = "Data") %>% 
+  bind_rows(forecast_clean) %>% 
+  ggplot(aes(x = date,  y = fires, colour = type)) +
+  geom_line()
+
+
+```
+
+It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
+
+# Modelling Original Data
+* Fable can model the data and automatically add back in seasonality and trend, resulting in a wholistic forecasting model. 
+
+```{r}
+fire_models <- fires_all %>% 
+  model(
+    arima = ARIMA(fires), 
+    snaive = SNAIVE(fires)
+  )
+
+forecast_2 <- fire_models %>% 
+  forecast(h = "2 years")
+
+forecast_5 <- fire_models %>% 
+  forecast(h = "5 years")
+
+forecast_2 %>% 
+  autoplot(filter(fires_all, date > lubridate::ymd("2012-01-01")))
+
+```
+
+
+```{r}
+forecast_5 %>% 
+  autoplot(filter(fires_all, date > lubridate::ymd("2012-01-01")))
+
+```
+It can be seen that the arima and snaive models stay relatively close together, though the (prediction I think????) interval for arima seems to be constant with time whereas the snaive model is increasing with time. 
+
+
+
+* The following shows the results of modeling this data all at once. 
+
+
+
+# Model Validation and Testing
+
+* Use data up until a certain point to use as training data. 
+
+* Model for the left over sections and use this to validate the model 
+
+* Use a later point and then check the final error metrics. 
+
