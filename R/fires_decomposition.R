@@ -54,6 +54,22 @@ fire_detrend %>%
   forecast(h = "2 years") %>%
   autoplot(filter(fire_detrend, lubridate::year(date) > 2012), level = NULL)
 
+
+fires_all %>%
+  select(date, fires) %>%
+  filter(is.na(fires) == FALSE) %>%
+  filter(is.nan(fires) == FALSE) %>%
+  model(
+    # ets = ETS(box_cox(fires, 0.3)),
+    arima = ARIMA((fires)),
+    snaive = SNAIVE(fires),
+    linear = fable::TSLM(fires)
+  ) %>%
+  forecast(h = "2 years") %>%
+  autoplot(filter(fires_all, lubridate::year(date) > 2012), level = NULL)
+
+
+
 fire_detrend %>%
   ACF() %>%
   ggplot(aes(x = as.numeric(lag), y = acf)) +
