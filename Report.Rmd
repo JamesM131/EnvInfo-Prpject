@@ -139,6 +139,7 @@ fires_all %>%
 ```
 
 
+The plot demonstrates a prevalence of forest fires during the dry seasons from June to November. Whether this trend is repetitive over the years is investigated by the following plot:
 ```{r}
 fires_all %>%
   gg_subseries(y = fires)
@@ -151,14 +152,6 @@ fires_all %>%
   gg_lag()
 ```
 
-
-
-```{r}
-fires_all %>%
-  ACF() %>%
-  ggplot(aes(x = lag, y = acf)) +
-  geom_line()
-```
 
 
 ```{r}
