@@ -1,0 +1,153 @@
+---
+title: "Forest Fires in Brazil"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(feasts)
+library(fable)
+library(ggplot2)
+library(tsibble)
+library(lubridate)
+```
+
+#Cover page
+
+
+#Contents page
+
+
+#Introduction
+Forest fires are a serious problem for the preservation of the Tropical Forests. Understanding the frequency of forest fires in a time series can help prevent them. Brazil has the largest rainforest on the planet, the Amazon rainforest. This report analyses the frequency of forest fires by the state in which the fire occurred as well as the time or season.
+
+
+##The Amazon Dataset
+The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
+```{r}
+fires <- read_csv(here::here("data-raw", "amazon.csv"))
+head(fires)
+```
+
+
+
+##Descriptive Statistics
+We begin by visualising the data.
+```{r}
+fires %>%
+  count(date, wt = number) %>%
+  ggplot(aes(x = date, y = n))+
+  geom_point()
+
+fires %>%
+  filter(sum(number) >= 1000) %>%
+  mutate(state=forcats::fct_reorder(state,number)) %>%
+  ggplot(aes(x = state, y = number))+
+  geom_bar(stat = "identity")+
+  coord_flip()
+```
+
+
+From the plot of date against the number of forest fires reported it can be seen that forest fires were the most prevalent during 2003 with over 42500 counts of forest fires. 2016 follows close by with a count slightly below 42500 fires. Over the years, the prevalence of forest fires appear to increase closer to 40000 forest fires.
+
+
+The plot of state against the number of forest fires reported demonstrates the outstanding prevalence of forest fires in Mato Grosso compared to the other states. Whether this is an outlier or error due to measurement or data compilation should be investigated during the data cleaning process.
+
+
+#Data Cleaning
+
+##The Problematic Month
+It should be noted that the month terms in the data set are in Portuguese and as such are not passable to standard date conversion functions. These must be translated in order to connect accurate dates to the data. There is an issue with this however, as the term that describes March uses non-standard characters and cannot be directly converted.
+
+
+First we need to access the term and store it in an object; this will allow us to reference it directly as it is not possible to type it into quotes. This object is obtained by filtering the data down to only rows that contain some non-alphabetic characters and then taking the first term. It should be noted that there is only one such problem term and as such, doing this is not an issue.
+```{r}
+# Fixing the Problem Month
+problem_term <- fires %>%
+  filter(stringr::str_detect(month, "[^a-zA-Z]")) %>%
+  slice(1) %>%
+  pull(month)
+```
+Now that we have an explicit definition of the problem term, it is possible to encode the direct conversions. The date is also created based on these months, using the first day of the month as a day reference.
+```{r}
+fires_date <- fires %>%
+  mutate(month_clean = case_when(
+    month == "Abril"        ~ "April",
+    month == "Agosto"       ~ "August",
+    month == "Dezembro"     ~ "December",
+    month == "Fevereiro"    ~ "February",
+    month == "Janeiro"      ~ "January",
+    month == "Julho"        ~ "July",
+    month == "Junho"        ~ "June",
+    month == "Maio"         ~ "May",
+    month == problem_term     ~  "March",
+    month == "Novembro"     ~ "November",
+    month == "Outubro"      ~ "October",
+    month == "Setembro"     ~ "September",
+    TRUE                    ~ NA_character_
+  ),
+  day = 1) %>%
+  mutate(date_month = lubridate::ymd(glue::glue("{year}-{month_clean}-{day}"))) %>%
+  mutate(date_index = yearmonth(date_month))
+
+head(fires_date)
+```
+
+##Creating a time aware data frame
+As this is monthly data, we want to explicitly encode this in the data set using the yearmonth function to create an index. A key is given as there is data repeated accross states.
+
+
+Exploring the data has revealed some states have duplicated data. The duplicated counts for specific states - Mato Grosso, Rio and Paraiba - are filtered using the following code.
+```{r}
+# Creating the clean fire object
+fires_clean <-
+  fires_date %>%
+  filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
+  filter(duplicated(.) == FALSE) %>%
+  as_tsibble(index = date_index, key = state) %>%
+  select(-c(month, date, day, date_month)) %>%
+  rename(date = date_index, month = month_clean, fires = number)
+
+fires_clean_all <-
+  fires_date %>%
+  filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
+  filter(duplicated(.) == FALSE) %>%
+  group_by(date_index) %>%
+  summarise(fires = sum(number)) %>%
+  as_tsibble(index = date_index) %>%
+  rename(date = date_index)
+
+# Save the clean data
+write_rds(fires_clean, here::here("data", "fires_clean.rds"))
+write_rds(fires_clean_all, here::here("data", "fires_clean_all.rds"))
+
+head(fires_clean)
+head(fires_clean_all)
+```
+
+
+#Data Analysis
+
+
+##Deseasoning
+
+```{r}
+fires_a <- fires_clean[fires_clean$state == "Acre",]
+plot.ts(fires_a$date, fires_a$fires)
+```
+
+
+
+##Model Specification
+
+##Parameter Estimation
+
+##Model Diagnostics
+
+
+#Conclusion
+
+#Disicussion
+
+#References

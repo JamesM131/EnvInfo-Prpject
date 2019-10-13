@@ -4,6 +4,11 @@ fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
 fires_a <- fires_clean[fires_clean$state == "Acre",]
 plot.ts(fires_a$date_month, fires_a$number)
 
+#the above two lines did not work for me. Is this the plot you wanted?
+fires_a <- fires_clean[fires_clean$state == "Acre",]
+plot.ts(fires_a$date_month, fires_a$number)
+# -Alexis
+
 MA <- c()
 CMA <- c()
 
