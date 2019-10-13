@@ -36,9 +36,11 @@ fires_clean <-
   fires_date %>%
   filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
   filter(duplicated(.) == FALSE) %>%
-  as_tsibble(index = date_index, key = state) %>%
   select(-c(month, date, day, date_month)) %>%
-  rename(date = date_index, month = month_clean, fires = number)
+  rename(date = date_index, month = month_clean, fires = number) %>%
+  mutate(state = ifelse(str_detect(state, "Par\xe1"), "Para", state)) %>%
+  as_tsibble(index = date, key = state)
+
 
 fires_clean_all <-
   fires_date %>%
