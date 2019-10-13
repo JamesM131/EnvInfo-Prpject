@@ -194,14 +194,14 @@ n_alt[which(is.nan(n_alt))] <- 0
 ```
 
 
-Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the :
+Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the new fire counts in n_alt:
 ```{r}
 month <- NULL
 for(i in 1:239){
   month[i] <- i%%12
 }
 
-fires_b <- as.data.frame(cbind(fires_a, month, MA, CMA, n_alt))
+fires_b <- as.data.frame(cbind(fires_a, month_nr, MA, CMA, n_alt))
 head(fires_b)
 ```
 
