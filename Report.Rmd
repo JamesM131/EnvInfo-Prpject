@@ -118,12 +118,10 @@ fires_clean_all <-
   as_tsibble(index = date_index) %>%
   rename(date = date_index)
 
-# Save the clean data
-write_rds(fires_clean, here::here("data", "fires_clean.rds"))
-write_rds(fires_clean_all, here::here("data", "fires_clean_all.rds"))
+fires_all <- fires_clean_all
 
 head(fires_clean)
-head(fires_clean_all)
+head(fires_all)
 ```
 
 
@@ -131,11 +129,92 @@ head(fires_clean_all)
 
 
 ##Deseasoning
+From "fires_decomposition.R":
+
+
+To analyse the seasonality of the data, we begin by plotting the frequency of fires against the months:
+```{r}
+fires_all %>%
+  gg_season(y = fires)
+```
+
 
 ```{r}
-fires_a <- fires_clean[fires_clean$state == "Acre",]
-plot.ts(fires_a$date, fires_a$fires)
+fires_all %>%
+  gg_subseries(y = fires)
 ```
+
+
+
+```{r}
+fires_all %>%
+  gg_lag()
+```
+
+
+
+```{r}
+fires_all %>%
+  ACF() %>%
+  ggplot(aes(x = lag, y = acf)) +
+  geom_line()
+```
+
+
+```{r}
+fires_all %>% feasts::STL(fires ~ season(window = Inf)) %>% autoplot()
+```
+
+
+```{r}
+fires_all %>%
+  classical_decomposition() %>%
+  autoplot()
+```
+
+
+
+```{r}
+fire_detrend %>%
+  filter(is.na(fires) == FALSE) %>%
+  filter(is.nan(fires) == FALSE) %>%
+  model(
+    # ets = ETS(box_cox(fires, 0.3)),
+    arima = ARIMA((fires)),
+    snaive = SNAIVE(fires),
+    linear = fable::TSLM(fires)
+    ) %>%
+  forecast(h = "2 years") %>%
+  autoplot(filter(fire_detrend, lubridate::year(date) > 2012), level = NULL)
+```
+
+
+```{r}
+fires_all %>%
+  select(date, fires) %>%
+  filter(is.na(fires) == FALSE) %>%
+  filter(is.nan(fires) == FALSE) %>%
+  model(
+    # ets = ETS(box_cox(fires, 0.3)),
+    arima = ARIMA((fires)),
+    snaive = SNAIVE(fires),
+    linear = fable::TSLM(fires)
+  ) %>%
+  forecast(h = "2 years") %>%
+  autoplot(filter(fires_all, lubridate::year(date) > 2012), level = NULL)
+```
+
+
+
+
+
+From "deseasoning fires.R":
+```{r}
+fires_a <- fires_date[fires_date$state == "Acre",]
+plot.ts(fires_a$date_month, fires_a$number)
+```
+
+
 
 
 
