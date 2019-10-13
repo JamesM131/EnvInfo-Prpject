@@ -3,7 +3,7 @@ library(here)
 library(forecast)
 library(lmtest)
 
-
+# Creating centred moving average:
 fires_a <- read_rds(here::here("data", "fires_clean_all.rds"))
 
 MA <- NULL
@@ -19,7 +19,7 @@ for(i in 1:237){
 }
 
 
-
+# Dividing by moving average:
 n_alt <- NULL
 
 for(i in 3:238){
@@ -29,6 +29,7 @@ for(i in 3:238){
 n_alt[239] <- NA
 n_alt[which(is.nan(n_alt))] <- 0
 
+# Separating into seasons:
 month <- NULL
 for(i in 1:239){
   month[i] <- i%%12
@@ -53,6 +54,7 @@ autumn <- subset(fires_b,
                    fires_b$month == 10 |
                    fires_b$month == 11)
 
+# Creating seasonal means:
 m_alt_winter <- mean(winter$n_alt, na.rm = TRUE)
 m_alt_spring <- mean(spring$n_alt, na.rm = TRUE)
 m_alt_summer <- mean(summer$n_alt, na.rm = TRUE)
@@ -65,6 +67,7 @@ for(i in 1:4){
   m_alt[i] <- m_alt[i]*4/m_alt_sum
 }
 
+# Deseasoning data:
 for(i in 1:length(winter$fires)){
   winter[i,7] <- winter$fires[i]/m_alt[1]
 }
