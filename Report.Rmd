@@ -11,6 +11,10 @@ library(fable)
 library(ggplot2)
 library(tsibble)
 library(lubridate)
+library(ggthemes)
+library(here)
+library(forecast)
+library(lmtest)
 ```
 
 #Cover page
@@ -45,8 +49,12 @@ fires %>%
   mutate(state=forcats::fct_reorder(state,number)) %>%
   ggplot(aes(x = state, y = number))+
   geom_bar(stat = "identity")+
-  coord_flip()
+  coord_flip()+
+  ggthemes :: theme_fivethirtyeight()
 ```
+
+
+It should be noted that one of the states is blank on the plot. This needs to be investigated in the data cleaning process.
 
 
 From the plot of date against the number of forest fires reported it can be seen that forest fires were the most prevalent during 2003 with over 42500 counts of forest fires. 2016 follows close by with a count slightly below 42500 fires. Over the years, the prevalence of forest fires appear to increase closer to 40000 forest fires.
@@ -100,14 +108,15 @@ As this is monthly data, we want to explicitly encode this in the data set using
 
 Exploring the data has revealed some states have duplicated data. The duplicated counts for specific states - Mato Grosso, Rio and Paraiba - are filtered using the following code.
 ```{r}
-# Creating the clean fire object
 fires_clean <-
   fires_date %>%
   filter(!(state %in% c("Mato Grosso", "Rio", "Paraiba"))) %>%
   filter(duplicated(.) == FALSE) %>%
-  as_tsibble(index = date_index, key = state) %>%
   select(-c(month, date, day, date_month)) %>%
-  rename(date = date_index, month = month_clean, fires = number)
+  rename(date = date_index, month = month_clean, fires = number) %>%
+  mutate(state = ifelse(str_detect(state, "Par\xe1"), "Para", state)) %>%
+  as_tsibble(index = date, key = state)
+
 
 fires_clean_all <-
   fires_date %>%
@@ -118,93 +127,258 @@ fires_clean_all <-
   as_tsibble(index = date_index) %>%
   rename(date = date_index)
 
-fires_all <- fires_clean_all
+fires_a <- fires_clean_all
 
 head(fires_clean)
-head(fires_all)
+head(fires_a)
 ```
+
+
+We can also check the problematic state has been cleaned up:
+```{r}
+fires <- fires_clean
+
+fires %>%
+  as_tibble() %>%
+  group_by(state) %>%
+  summarise(fires = sum(fires)) %>%
+  mutate(state=forcats::fct_reorder(state,fires)) %>%
+  ggplot(aes(x = state, y = fires))+
+  geom_col()+
+  coord_flip()+
+  ggthemes :: theme_fivethirtyeight()
+```
+
 
 
 #Data Analysis
 
 
-##Deseasoning
-From "fires_decomposition.R":
-
-
-To analyse the seasonality of the data, we begin by plotting the frequency of fires against the months:
+##Decomposition of Amazon data
+The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model.
 ```{r}
-fires_all %>%
-  gg_season(y = fires)
-```
-
-
-The plot demonstrates a prevalence of forest fires during the dry seasons from June to November. Whether this trend is repetitive over the years is investigated by the following plot:
-```{r}
-fires_all %>%
-  gg_subseries(y = fires)
-```
-
-
-
-```{r}
-fires_all %>%
-  gg_lag()
-```
-
-
-
-```{r}
-fires_all %>% feasts::STL(fires ~ season(window = Inf)) %>% autoplot()
-```
-
-
-```{r}
-fires_all %>%
-  classical_decomposition() %>%
+fires_a %>% 
+  classical_decomposition() %>% 
   autoplot()
 ```
+It can be seen that there is a strong seasonal component with two consistent peaks. The overall trend shows an overall increase, though it is not constantly increasing.
 
 
-
+###Deseasoning
+We begin by deseasoning the data. A year comprises of four seasons and each season is approximately three months in length. Thus to summarise the data for each season, we first calculate the moving average fire counts of three consecutive months (MA). The centered moving average (CMA) is calculated by the average of two consecutive MAs:
 ```{r}
-fire_detrend %>%
-  filter(is.na(fires) == FALSE) %>%
-  filter(is.nan(fires) == FALSE) %>%
-  model(
-    # ets = ETS(box_cox(fires, 0.3)),
-    arima = ARIMA((fires)),
-    snaive = SNAIVE(fires),
-    linear = fable::TSLM(fires)
-    ) %>%
-  forecast(h = "2 years") %>%
-  autoplot(filter(fire_detrend, lubridate::year(date) > 2012), level = NULL)
+MA <- NULL
+CMA <- NULL
+
+for(i in 1:238){
+  MA[i+1] <- (fires_a$fires[i] + fires_a$fires[i+1]
+              + fires_a$fires[i+2])/3
+}
+
+for(i in 1:237){
+  CMA[i+2] <- (MA[i+1] + MA[i+2])/2
+}
 ```
 
 
+Now we divide the fire counts by the centred moving averages and call it 'n_alt':
 ```{r}
-fires_all %>%
-  select(date, fires) %>%
-  filter(is.na(fires) == FALSE) %>%
-  filter(is.nan(fires) == FALSE) %>%
-  model(
-    # ets = ETS(box_cox(fires, 0.3)),
-    arima = ARIMA((fires)),
-    snaive = SNAIVE(fires),
-    linear = fable::TSLM(fires)
-  ) %>%
-  forecast(h = "2 years") %>%
-  autoplot(filter(fires_all, lubridate::year(date) > 2012), level = NULL)
+n_alt <- NULL
+
+for(i in 3:238){
+  n_alt[i] <- fires_a$fires[i]/CMA[i]
+}
+
+n_alt[239] <- NA
+n_alt[which(is.nan(n_alt))] <- 0
+```
+
+
+Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the :
+```{r}
+month <- NULL
+for(i in 1:239){
+  month[i] <- i%%12
+}
+
+fires_b <- as.data.frame(cbind(fires_a, month, MA, CMA, n_alt))
+head(fires_b)
+```
+
+
+For each season, the relevant months are collected together:
+```{r}
+winter <- subset(fires_b,
+                 fires_b$month == 12 |
+                   fires_b$month == 1 |
+                   fires_b$month == 2)
+spring <- subset(fires_b,
+                 fires_b$month == 3 |
+                   fires_b$month == 4 |
+                   fires_b$month == 5)
+summer <- subset(fires_b,
+                 fires_b$month == 6 |
+                   fires_b$month == 7 |
+                   fires_b$month == 8)
+autumn <- subset(fires_b,
+                 fires_b$month == 9 |
+                   fires_b$month == 10 |
+                   fires_b$month == 11)
+```
+
+
+Now we calculate the average for each season as well as the sum of these average values:
+```{r}
+m_alt_winter <- mean(winter$n_alt, na.rm = TRUE)
+m_alt_spring <- mean(spring$n_alt, na.rm = TRUE)
+m_alt_summer <- mean(summer$n_alt, na.rm = TRUE)
+m_alt_autumn <- mean(autumn$n_alt, na.rm = TRUE)
+
+m_alt <- c(m_alt_winter, m_alt_spring, m_alt_summer, m_alt_autumn)
+m_alt_sum <- sum(m_alt)
+```
+
+
+The proportion of each season's average is calculated as a decimal by dividing with the sum. Then these proportion are used to replace the (....) of each season with the fires count divided by the proportion:
+```{r}
+for(i in 1:4){
+  m_alt[i] <- m_alt[i]*4/m_alt_sum
+}
+
+for(i in 1:length(winter$fires)){
+  winter[i,7] <- winter$fires[i]/m_alt[1]
+}
+
+for(i in 1:length(spring$fires)){
+  spring[i,7] <- spring$fires[i]/m_alt[2]
+}
+
+for(i in 1:length(summer$fires)){
+  summer[i,7] <- summer$fires[i]/m_alt[3]
+}
+
+for(i in 1:length(autumn$fires)){
+  autumn[i,7] <- autumn$fires[i]/m_alt[4]
+}
+```
+
+
+
+```{r}
+fires_des <- as.data.frame(rbind(winter,spring,summer,autumn))
+fires_des$index <- as.numeric(row.names(fires_des))
+
+fires_des %>%
+  count(date, wt = V7) %>%
+  ggplot(aes(x = date, y = n)) +
+  geom_point()
 ```
 
 
 
 
 
-From "deseasoning fires.R":
+
 ```{r}
-fires_a <- fires_date[fires_date$state == "Acre",]
-plot.ts(fires_a$date_month, fires_a$number)
+# linear model
+fit1 <- lm(fires_des$fires ~ fires_des$index)
+summary(fit1) # significant
+fitA <- fit1
+plot(fires_des$index, fires_des$fires)
+
+# ARIMA models
+library(lmtest)
+acf(fires_des$fires, lag.max = 50) # outside conf int until 50
+pacf(fires_des$fires) # spikes at 2,3,6
+
+arima101 <- arima(fires_des$fires, order = c(1,0,1))
+coeftest(arima101) # significant
+arima202 <- arima(fires_des$fires, order = c(2,0,2))
+coeftest(arima202) # inasignificant
+# try differencing
+arima111 <- arima(fires_des$fires, order = c(1,1,1))
+coeftest(arima111) # significant
+acf(arima202$residuals) # needs more ma
+pacf(arima202$residuals) # needs more ar
+
+arima212 <- arima(fires_des$fires, order = c(2,1,2))
+coeftest(arima212) # significant
+acf(arima212$residuals) # needs more ma
+pacf(arima212$residuals) # perfect
+
+arima213 <- arima(fires_des$fires, order = c(2,1,3))
+coeftest(arima213) # ma1 term insignificant. Other terms super significant.
+acf(arima213$residuals) # perfect
+pacf(arima213$residuals) # perfect
+fit_B <- arima213
+
+# forecasting December 2017
+View(fires_des)
+prediction_A <- (1700.243 + 3.371*240)*m_alt[1]
+prediction_A # 2109.442
+prediction_B <- forecast(fit_B, h = 1)
+prediction_B # 1915.295
+
+```
+
+
+
+
+
+###Random component
+Now the random term can be examined in closer detail. 
+```{r}
+fires_decomp <- fires_a %>% 
+  classical_decomposition() %>% 
+  na.omit()
+
+fires_ts <- ts(fires_decomp$random)
+acf(fires_ts)
+```
+
+
+The acf of this data shows an alternating acf, following what appears to follow a wave form shape. This shape has some peaks (both positive and negative), for a high number of lags (see 3, 4, 14, 23). It would be interesting to see this with an increased numbr of lags. 
+
+```{r}
+acf(fires_ts, lag.max = 60)
+```
+
+
+After displaying the acf for up to 60 lags, it seems that this alternating wave pattern continues, but 23 is the last lag that has any significant influence. 
+
+
+Now observing the pacf.
+```{r}
+pacf(fires_ts)
+```
+
+
+The pacf funciton for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the acf (through viewing a larger number of lags).
+
+```{r}
+pacf(fires_ts, lag.max = 60)
+```
+
+
+The lags mentioned above seem to be the most influential, however, these spikes can be seen in the later lags as well. The overall pattern shows a diminishing alternating effect that trends towards an exaggerated version of the acf function. 
+
+
+The results after looking at the acf and pacf do not immediately point to a specific model, as there is a large number of lags that are influential and there seems to be something of a cyclic or seasonal effect in fucntion values. 
+
+
+# Modelling the Aggregate Time Series
+Noting that there is not a model that is immediately obvious after observing both the pacf and acf, the decomposed data will be modelled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
+
+```{r}
+fires_decomp_models <- fires_decomp %>% 
+  rename(fires_original = fires, fires = random) %>% 
+  as_tsibble() %>% 
+  model(
+    arima = ARIMA(fires), 
+    snaive = SNAIVE(fires)
+  )
+
+fires_decomp_models$arima
 ```
 
 
@@ -218,8 +392,12 @@ plot.ts(fires_a$date_month, fires_a$number)
 ##Model Diagnostics
 
 
+
 #Conclusion
 
 #Disicussion
+
+
+
 
 #References
