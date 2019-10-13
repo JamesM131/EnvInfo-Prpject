@@ -30,6 +30,7 @@ Forest fires are a serious problem for the preservation of the Tropical Forests.
 ##The Amazon Dataset
 The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
 ```{r}
+fires_clean_rds <- read_rds(here::here("data", "fires_clean.rds"))
 fires <- read_csv(here::here("data-raw", "amazon.csv"))
 head(fires)
 ```
@@ -39,18 +40,23 @@ head(fires)
 ##Descriptive Statistics
 We begin by visualising the data.
 ```{r}
-fires %>%
-  count(date, wt = number) %>%
+fires_clean_rds %>%
+  as_tibble() %>% 
+  count(date, wt = fires) %>%
   ggplot(aes(x = date, y = n))+
   geom_point()
 
-fires %>%
-  filter(sum(number) >= 1000) %>%
-  mutate(state=forcats::fct_reorder(state,number)) %>%
-  ggplot(aes(x = state, y = number))+
+fires_clean_rds %>%
+  as_tibble() %>% 
+  group_by(state) %>% 
+  summarise(fires = sum(fires)) %>% 
+  # filter(fires >= 5000) %>%
+  mutate(state=forcats::fct_reorder(state,fires)) %>%
+  ggplot(aes(x = state, y = fires))+
   geom_bar(stat = "identity")+
   coord_flip()+
-  ggthemes :: theme_fivethirtyeight()
+  ggthemes :: theme_fivethirtyeight() + 
+  ggtitle("Fires in Brazilian States", subtitle = "1998 - 2017")
 ```
 
 
@@ -196,12 +202,12 @@ n_alt[which(is.nan(n_alt))] <- 0
 
 Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the new fire counts in n_alt:
 ```{r}
-month <- NULL
+month_nr <- NULL
 for(i in 1:239){
-  month[i] <- i%%12
+  month_nr[i] <- i%%12
 }
 
-fires_b <- as.data.frame(cbind(fires_a, month_nr, MA, CMA, n_alt))
+fires_b <- as.data.frame(cbind(as_tibble(fires_a), month_nr, MA, CMA, n_alt))
 head(fires_b)
 ```
 
@@ -371,11 +377,11 @@ Noting that there is not a model that is immediately obvious after observing bot
 
 ```{r}
 fires_decomp_models <- fires_decomp %>% 
-  rename(fires_original = fires, fires = random) %>% 
+  rename(fires_original = fires, fires_model = random) %>% 
   as_tsibble() %>% 
-  model(
-    arima = ARIMA(fires), 
-    snaive = SNAIVE(fires)
+  fabletools::model(
+    arima = ARIMA(fires_model), 
+    snaive = SNAIVE(fires_model)
   )
 
 fires_decomp_models$arima
