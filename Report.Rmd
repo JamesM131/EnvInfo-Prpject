@@ -71,7 +71,6 @@ It should be noted that the month terms in the data set are in Portuguese and as
 
 First we need to access the term and store it in an object; this will allow us to reference it directly as it is not possible to type it into quotes. This object is obtained by filtering the data down to only rows that contain some non-alphabetic characters and then taking the first term. It should be noted that there is only one such problem term and as such, doing this is not an issue.
 ```{r}
-# Fixing the Problem Month
 problem_term <- fires %>%
   filter(stringr::str_detect(month, "[^a-zA-Z]")) %>%
   slice(1) %>%
@@ -127,10 +126,10 @@ fires_clean_all <-
   as_tsibble(index = date_index) %>%
   rename(date = date_index)
 
-fires_a <- fires_clean_all
+fires_all <- fires_clean_all
 
 head(fires_clean)
-head(fires_a)
+head(fires_all)
 ```
 
 
@@ -157,7 +156,7 @@ fires %>%
 ##Decomposition of Amazon data
 The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model.
 ```{r}
-fires_a %>% 
+fires_all %>% 
   classical_decomposition() %>% 
   autoplot()
 ```
@@ -167,12 +166,14 @@ It can be seen that there is a strong seasonal component with two consistent pea
 ###Deseasoning
 We begin by deseasoning the data. A year comprises of four seasons and each season is approximately three months in length. Thus to summarise the data for each season, we first calculate the moving average fire counts of three consecutive months (MA). The centered moving average (CMA) is calculated by the average of two consecutive MAs:
 ```{r}
+fires_a_2 <- read_rds(here::here("data", "fires_clean_all.rds"))
+
 MA <- NULL
 CMA <- NULL
 
 for(i in 1:238){
-  MA[i+1] <- (fires_a$fires[i] + fires_a$fires[i+1]
-              + fires_a$fires[i+2])/3
+  MA[i+1] <- (fires_a_2$fires[i] + fires_a_2$fires[i+1]
+              + fires_a_2$fires[i+2])/3
 }
 
 for(i in 1:237){
@@ -186,7 +187,7 @@ Now we divide the fire counts by the centred moving averages and call it 'n_alt'
 n_alt <- NULL
 
 for(i in 3:238){
-  n_alt[i] <- fires_a$fires[i]/CMA[i]
+  n_alt[i] <- fires_a_2$fires[i]/CMA[i]
 }
 
 n_alt[239] <- NA
@@ -196,12 +197,27 @@ n_alt[which(is.nan(n_alt))] <- 0
 
 Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the new fire counts in n_alt:
 ```{r}
-month <- NULL
+month_2 <- NULL
+
 for(i in 1:239){
-  month[i] <- i%%12
+  month_2[i] <- i%%12
 }
 
-fires_b <- as.data.frame(cbind(fires_a, month_nr, MA, CMA, n_alt))
+month_2[which(month_2 == 1)] <- "January"
+month_2[which(month_2 == 2)] <- "February"
+month_2[which(month_2 == 3)] <- "March"
+month_2[which(month_2 == 4)] <- "April"
+month_2[which(month_2 == 5)] <- "May"
+month_2[which(month_2 == 6)] <- "June"
+month_2[which(month_2 == 7)] <- "July"
+month_2[which(month_2 == 8)] <- "August"
+month_2[which(month_2 == 9)] <- "September"
+month_2[which(month_2 == 10)] <- "October"
+month_2[which(month_2 == 11)] <- "November"
+month_2[which(month_2 == 12)] <- "December"
+
+
+fires_b <- as.data.frame(cbind(fires_a_2, month_2, MA, CMA, n_alt))
 head(fires_b)
 ```
 
