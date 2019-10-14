@@ -30,6 +30,7 @@ Forest fires are a serious problem for the preservation of the Tropical Forests.
 ##The Amazon Dataset
 The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
 ```{r}
+fires_clean_rds <- read_rds(here::here("data", "fires_clean.rds"))
 fires <- read_csv(here::here("data-raw", "amazon.csv"))
 head(fires)
 ```
@@ -40,11 +41,20 @@ head(fires)
 We begin by visualising the data.
 ```{r}
 fires %>%
-  count(date, wt = number) %>%
+  count(date , wt = number) %>%
   ggplot(aes(x = date, y = n))+
   geom_point()
 
-  ggplot(aes(x = state, y = number))+
+fires_clean_rds %>%
+  as_tibble() %>% 
+  count(date, wt = fires) %>%
+  ggplot(aes(x = date, y = n))+
+  geom_point()
+
+fires_clean_rds %>%
+  as_tibble() %>% 
+  group_by(state) %>% 
+  summarise(fires = sum(fires)) %>% 
   # filter(fires >= 5000) %>%
   mutate(state=forcats::fct_reorder(state,fires)) %>%
   ggplot(aes(x = state, y = fires))+
@@ -220,6 +230,11 @@ month_2[which(month_2 == 12)] <- "December"
 
 
 fires_b <- as.data.frame(cbind(fires_a_2, month_2, MA, CMA, n_alt))
+=======
+month_nr <- NULL
+for(i in 1:239){
+  month_nr[i] <- i%%12
+}
 
 fires_b <- as.data.frame(cbind(as_tibble(fires_a), month_nr, MA, CMA, n_alt))
 >>>>>>> 2a008cf805fe6969ba2642da33dce1bcbf9555f7
@@ -377,6 +392,10 @@ pacf(fires_ts)
 The pacf funciton for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the acf (through viewing a larger number of lags).
 
 ```{r}
+model(
+  arima = ARIMA(fires),
+  snaiave = SNAIVE(fires)
+)
 pacf(fires_ts, lag.max = 60)
 ```
 
