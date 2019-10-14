@@ -441,12 +441,12 @@ This also trains a seasonal naive model (random process with seasonal component)
 
 ```{r}
 fires_decomp_forecast <- fires_decomp_models %>% 
-  forecast(h = "2 years") 
+  fabletools::forecast(h = "2 years") 
 
 forecast_clean <- fires_decomp_forecast %>% 
   filter(.model == "arima") %>% 
   as_tibble() %>% 
-  select(date, fires) %>% 
+  select(date, fires = fires_var) %>% 
   mutate(type = "Model")
 
 
@@ -467,26 +467,27 @@ It can be seen that this model trends towards 0 and has little variation compara
 
 ```{r warning=FALSE}
 fire_models <- fires_all %>% 
+  rename(fires_var = fires) %>% 
   model(
-    arima = ARIMA(fires), 
-    snaive = SNAIVE(fires)
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var)
   )
 
 forecast_2 <- fire_models %>% 
-  forecast(h = "2 years")
+  fabletools::forecast(h = "2 years")
 
 forecast_5 <- fire_models %>% 
-  forecast(h = "5 years")
+  fabletools::forecast(h = "5 years")
 
 forecast_2 %>% 
-  autoplot(filter(fires_all, date > lubridate::ymd("2012-01-01")))
+  autoplot(filter(rename(fires_all, fires_var = fires), date > lubridate::ymd("2012-01-01")))
 
 ```
 
 
 ```{r warning=FALSE}
 forecast_5 %>% 
-  autoplot(filter(fires_all, date > lubridate::ymd("2012-01-01")))
+  autoplot(filter(rename(fires_all, fires_var = fires), date > lubridate::ymd("2012-01-01")))
 
 ```
 It can be seen that the arima and snaive models stay relatively close together, though the (prediction I think????) interval for arima seems to be constant with time whereas the snaive model is increasing with time. 
@@ -520,9 +521,10 @@ fires_test <- fires_all %>%
 The models will be trained on this data.
 ```{r}
 train_models <- fires_train %>% 
+  rename(fires_var = fires) %>% 
   model(
-    arima = ARIMA(fires), 
-    snaive = SNAIVE(fires)
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var)
   )
 ```
 
@@ -531,7 +533,7 @@ The remaining data will now be forecast for. The predicted data will be stored i
 
 ```{r}
 forecast_data <- train_models %>% 
-  forecast(h = "2 years")
+  fabletools::forecast(h = "2 years")
 
 arima_prediction <- forecast_data %>% 
   filter(.model == "arima")
@@ -543,8 +545,8 @@ snaive_prediction <- forecast_data %>%
 
 
 ```{r}
-arima_mse <- mean((fires_test$fires - arima_prediction$fires)^2)
-snaive_mse <- mean((fires_test$fires - snaive_prediction$fires)^2)
+arima_mse <- mean((fires_test$fires - arima_prediction$fires_var)^2)
+snaive_mse <- mean((fires_test$fires - snaive_prediction$fires_var)^2)
 glue::glue("The mean squared error of ARIMA is:  {arima_mse}
            The mean squared error of SNAIVE is: {snaive_mse}")
 ```
