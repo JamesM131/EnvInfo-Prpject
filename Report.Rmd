@@ -44,13 +44,14 @@ fires %>%
   ggplot(aes(x = date, y = n))+
   geom_point()
 
-fires %>%
-  filter(sum(number) >= 1000) %>%
-  mutate(state=forcats::fct_reorder(state,number)) %>%
   ggplot(aes(x = state, y = number))+
+  # filter(fires >= 5000) %>%
+  mutate(state=forcats::fct_reorder(state,fires)) %>%
+  ggplot(aes(x = state, y = fires))+
   geom_bar(stat = "identity")+
   coord_flip()+
-  ggthemes :: theme_fivethirtyeight()
+  ggthemes :: theme_fivethirtyeight() + 
+  ggtitle("Fires in Brazilian States", subtitle = "1998 - 2017")
 ```
 
 
@@ -197,6 +198,7 @@ n_alt[which(is.nan(n_alt))] <- 0
 
 Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the new fire counts in n_alt:
 ```{r}
+<<<<<<< HEAD
 month_2 <- NULL
 
 for(i in 1:239){
@@ -218,6 +220,9 @@ month_2[which(month_2 == 12)] <- "December"
 
 
 fires_b <- as.data.frame(cbind(fires_a_2, month_2, MA, CMA, n_alt))
+
+fires_b <- as.data.frame(cbind(as_tibble(fires_a), month_nr, MA, CMA, n_alt))
+>>>>>>> 2a008cf805fe6969ba2642da33dce1bcbf9555f7
 head(fires_b)
 ```
 
@@ -387,11 +392,11 @@ Noting that there is not a model that is immediately obvious after observing bot
 
 ```{r}
 fires_decomp_models <- fires_decomp %>% 
-  rename(fires_original = fires, fires = random) %>% 
+  rename(fires_original = fires, fires_model = random) %>% 
   as_tsibble() %>% 
-  model(
-    arima = ARIMA(fires), 
-    snaive = SNAIVE(fires)
+  fabletools::model(
+    arima = ARIMA(fires_model), 
+    snaive = SNAIVE(fires_model)
   )
 
 fires_decomp_models$arima
