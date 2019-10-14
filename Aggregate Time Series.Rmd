@@ -18,7 +18,7 @@ fires_all <- read_rds(here::here("data", "fires_clean_all.rds"))
 
 The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model. 
 
-```{r}
+```{r warning=FALSE}
 fires_all %>% 
   classical_decomposition() %>% 
   autoplot()
@@ -112,7 +112,7 @@ It can be seen that this model trends towards 0 and has little variation compara
 # Modelling Original Data
 * Fable can model the data and automatically add back in seasonality and trend, resulting in a wholistic forecasting model. 
 
-```{r}
+```{r warning=FALSE}
 fire_models <- fires_all %>% 
   model(
     arima = ARIMA(fires), 
@@ -131,7 +131,7 @@ forecast_2 %>%
 ```
 
 
-```{r}
+```{r warning=FALSE}
 forecast_5 %>% 
   autoplot(filter(fires_all, date > lubridate::ymd("2012-01-01")))
 
@@ -140,15 +140,59 @@ It can be seen that the arima and snaive models stay relatively close together, 
 
 
 
-* The following shows the results of modeling this data all at once. 
-
-
-
 # Model Validation and Testing
 
 * Use data up until a certain point to use as training data. 
 
-* Model for the left over sections and use this to validate the model 
+Frist lets have a look at the time range for the fires data.
+```{r}
+fires_all %>% 
+  pull(date) %>% 
+  range()
+```
 
-* Use a later point and then check the final error metrics. 
+It goes from January of 1998 to November of 2017. In the previous examples, 2 years were forecast in order to look at the modelling process. This same amount of time will be forecast to assess the models. 
+
+Before assessing the models, the training data needs to be obtained by filtering anything after November 2015.
+
+```{r}
+fires_train <- fires_all %>% 
+  filter(date <= lubridate::ymd("2015-11-01"))
+
+fires_test <- fires_all %>% 
+  filter(date > lubridate::ymd("2015-11-01"))
+
+```
+
+The models will be trained on this data.
+```{r}
+train_models <- fires_train %>% 
+  model(
+    arima = ARIMA(fires), 
+    snaive = SNAIVE(fires)
+  )
+```
+
+
+The remaining data will now be forecast for. The predicted data will be stored in a results object, which will be compared against the gruondtruth to obtain an accuracy metric.
+
+```{r}
+forecast_data <- train_models %>% 
+  forecast(h = "2 years")
+
+arima_prediction <- forecast_data %>% 
+  filter(.model == "arima")
+
+snaive_prediction <- forecast_data %>% 
+  filter(.model == "snaive")
+
+```
+
+
+```{r}
+arima_mse <- mean((fires_test$fires - arima_prediction$fires)^2)
+snaive_mse <- mean((fires_test$fires - snaive_prediction$fires)^2)
+glue::glue("The mean squared error of ARIMA is:  {arima_mse}
+           The mean squared error of SNAIVE is: {snaive_mse}")
+```
 
