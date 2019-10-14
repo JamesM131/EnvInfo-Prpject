@@ -389,19 +389,51 @@ Noting that there is not a model that is immediately obvious after observing bot
 
 ```{r}
 fires_decomp_models <- fires_decomp %>% 
-  rename(fires_original = fires, fires = random) %>% 
+  rename(fires_original = fires, fires_var = random) %>% 
   as_tsibble() %>% 
   model(
-    arima = ARIMA(fires), 
-    snaive = SNAIVE(fires)
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var)
   )
 
 fires_decomp_models$arima
 ```
 
-* This creates a seasonal ARIMA model with parameters (2, 0, 0) (0, 0, 1). [Explain seasonal arima]
+This creates a seasonal ARIMA model with parameters (2, 0, 0) (0, 0, 1).
 
-* This also trains a seasonal naive model (random process with seasonal component)
+
+A seasonal ARIMA model is formed by including additional seasonal terms in the ARIMA models:
+
+
+\(ARIMA\ (p,d,q)\ (P,D,Q)_m\)
+
+
+where \((p,d,q)\) and \((P,D,Q)_m\) denotes the non-seasonal part and the seasonal part of the model, respectively. \(m\) denotes the number of observations per year.
+
+
+The seasonal part of the model consists of terms that are similar to the non-seasonal components of the model, but involves backshifts of the seasonal period. The seasonal part of an AR or MA model will be seen in the seasonal lags of the PACF and ACF. For example, an \(ARIMA\ (0,0,0)\ (0,0,1)_12\) model will show:
+
+
+- a spike at lag 12 in the ACF but no other significant spikes;
+
+
+- exponential decay in the seasonal lags of the PACF (that is, at lags 12, 24, 36, ...).
+
+
+Similarly, an \(ARIMA\ (0,0,0)\ (1,0,0)_12\) model will show:
+
+
+- exponential decay in the seasonal lags of the ACF;
+
+
+- a single significant spike at lag 12 in the PACF.
+
+
+In considering the appropriate seasonal orders for a seasonal ARIMA model, attention is restricted to the seasonal lags. The modelling procedure is almost the samea s for non-seasonal data, except that it is needed to select seasonal AR and MA terms as well as the non-seasonal components of the model. [cite the website]
+
+
+
+This also trains a seasonal naive model (random process with seasonal component).
   * This does not make sense?? if season has been removed why would this work?
 
 
@@ -426,8 +458,6 @@ fires_decomp %>%
   bind_rows(forecast_clean) %>% 
   ggplot(aes(x = date,  y = fires, colour = type)) +
   geom_line()
-
-
 ```
 
 It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
@@ -531,3 +561,7 @@ glue::glue("The mean squared error of ARIMA is:  {arima_mse}
 
 
 #References
+
+https://otexts.com/fpp2/seasonal-arima.html
+
+
