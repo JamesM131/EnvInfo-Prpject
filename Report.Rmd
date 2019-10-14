@@ -280,54 +280,74 @@ fires_des %>%
 ```
 
 
-
-
-
-
+Now we model the deseasoned data to enable forecasting. We begin with a linear model, called fitA:
 ```{r}
-# linear model
-fit1 <- lm(fires_des$fires ~ fires_des$index)
-summary(fit1) # significant
-fitA <- fit1
+fitA <- lm(fires_des$fires ~ fires_des$index)
+summary(fitA)
 plot(fires_des$index, fires_des$fires)
-
-# ARIMA models
-library(lmtest)
-acf(fires_des$fires, lag.max = 50) # outside conf int until 50
-pacf(fires_des$fires) # spikes at 2,3,6
-
-arima101 <- arima(fires_des$fires, order = c(1,0,1))
-coeftest(arima101) # significant
-arima202 <- arima(fires_des$fires, order = c(2,0,2))
-coeftest(arima202) # inasignificant
-# try differencing
-arima111 <- arima(fires_des$fires, order = c(1,1,1))
-coeftest(arima111) # significant
-acf(arima202$residuals) # needs more ma
-pacf(arima202$residuals) # needs more ar
-
-arima212 <- arima(fires_des$fires, order = c(2,1,2))
-coeftest(arima212) # significant
-acf(arima212$residuals) # needs more ma
-pacf(arima212$residuals) # perfect
-
-arima213 <- arima(fires_des$fires, order = c(2,1,3))
-coeftest(arima213) # ma1 term insignificant. Other terms super significant.
-acf(arima213$residuals) # perfect
-pacf(arima213$residuals) # perfect
-fit_B <- arima213
-
-# forecasting December 2017
-View(fires_des)
-prediction_A <- (1700.243 + 3.371*240)*m_alt[1]
-prediction_A # 2109.442
-prediction_B <- forecast(fit_B, h = 1)
-prediction_B # 1915.295
-
 ```
 
 
+The summary statistics show significance in the p-values. However, let's go further and find a better model. Checking the ACF and PACF plots:
+```{r}
+library(lmtest)
+acf(fires_des$fires, lag.max = 50)
+pacf(fires_des$fires)
+```
 
+
+The ACF plot shows spikes outside the confidence interval until lag 50. The PACF plot shows spikes at lags 2, 3 and 6. Try ARIMA models:
+```{r}
+arima101 <- arima(fires_des$fires, order = c(1,0,1))
+coeftest(arima101)
+
+arima202 <- arima(fires_des$fires, order = c(2,0,2))
+coeftest(arima202)
+```
+
+
+The ARIMA(1,0,1) model seems significant but not the ARIMA(2,0,2). We implement differencing into our model:
+```{r}
+arima111 <- arima(fires_des$fires, order = c(1,1,1))
+coeftest(arima111)
+acf(arima202$residuals)
+pacf(arima202$residuals)
+```
+
+
+Although the coeftest function shows significance for our model, the ACF and PACF plots suggest we require more AR and MA:
+```{r}
+arima212 <- arima(fires_des$fires, order = c(2,1,2))
+coeftest(arima212)
+acf(arima212$residuals)
+pacf(arima212$residuals)
+```
+
+
+Now the coeftest shows significance and our PACF plot seems perfect! However the ACF plot suggests we need more MA:
+```{r}
+arima213 <- arima(fires_des$fires, order = c(2,1,3))
+coeftest(arima213)
+acf(arima213$residuals)
+pacf(arima213$residuals)
+fit_B <- arima213
+```
+
+
+In our final model ARIMA(2,1,3), the ma1 term is insignificant however the other terms highly significant. Both the ACF and PACF plots are also within the confidence interval for all lag values. Call this model fitB.
+
+
+##Forecasting
+Using out two models (fitA and fitB), the fires count for December 2017 has been forecasted:
+```{r}
+prediction_A <- (1700.243 + 3.371*240)*m_alt[1]
+prediction_A
+prediction_B <- forecast(fit_B, h = 1)
+prediction_B
+```
+
+
+fitA forecasted the fires count to be roughly 2222.30 which is within the 95% prediction interval forecasted using fitB. The point forecast using fitB was roughly 1915.30. 
 
 
 ###Random component
@@ -341,33 +361,31 @@ fires_ts <- ts(fires_decomp$random)
 acf(fires_ts)
 ```
 
-The acf of this data shows an alternating acf, following what appears to follow a wave form shape. This shape has some peaks (both positive and negative), for a high number of lags (see 3, 4, 14, 23). It would be interesting to see this with an increased numbr of lags. 
-
+The ACF of this data shows an alternating ACF, following what appears to follow a wave form shape. This shape has some peaks (both positive and negative), for a high number of lags (see 3, 4, 14, 23). It would be interesting to see this with an increased number of lags:
 ```{r}
 acf(fires_ts, lag.max = 60)
 ```
 
-After displaying the acf for up to 60 lags, it seems that this alternating wave pattern continues, but 23 is the last lag that has any significant influence. 
+After displaying the ACF for up to 60 lags, it seems that this alternating wave pattern continues, but 23 is the last lag that has any significant influence. 
 
 
-Now observing the pacf.
+Now observing the PACF.
 ```{r}
 pacf(fires_ts)
 ```
 
-The pacf funciton for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the acf (through viewing a larger number of lags).
-
+The PACF funciton for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the ACF (through viewing a larger number of lags):
 ```{r}
 pacf(fires_ts, lag.max = 60)
 ```
 
-The lags mentioned above seem to be the most influential, however, these spikes can be seen in the later lags as well. The overall pattern shows a diminishing alternating effect that trends towards an exaggerated version of the acf function. 
+The lags mentioned above seem to be the most influential, however, these spikes can be seen in the later lags as well. The overall pattern shows a diminishing alternating effect that trends towards an exaggerated version of the ACF function. 
 
 
-The results after looking at the acf and pacf do not immediately point to a specific model, as there is a large number of lags that are influential and there seems to be something of a cyclic or seasonal effect in fucntion values. 
+The results after looking at the ACF and PACF do not immediately point to a specific model, as there is a large number of lags that are influential and there seems to be something of a cyclic or seasonal effect in fucntion values. 
 
-# Modelling the Aggregate Time Series
-Noting that there is not a model that is immediately obvious after observing both the pacf and acf, the decomposed data will be modelled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
+##Modelling the Aggregate Time Series
+Noting that there is not a model that is immediately obvious after observing both the PACF and ACF, the decomposed data will be modelled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
 
 ```{r}
 fires_decomp_models <- fires_decomp %>% 
@@ -387,7 +405,7 @@ fires_decomp_models$arima
   * This does not make sense?? if season has been removed why would this work?
 
 
-# Forecasting
+##Forecasting
 
 ```{r}
 fires_decomp_forecast <- fires_decomp_models %>% 
@@ -414,7 +432,7 @@ fires_decomp %>%
 
 It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
 
-# Modelling Original Data
+##Modelling Original Data
 * Fable can model the data and automatically add back in seasonality and trend, resulting in a wholistic forecasting model. 
 
 ```{r warning=FALSE}
@@ -445,7 +463,7 @@ It can be seen that the arima and snaive models stay relatively close together, 
 
 
 
-# Model Validation and Testing
+## Model Validation and Testing
 
 * Use data up until a certain point to use as training data. 
 
@@ -502,15 +520,6 @@ glue::glue("The mean squared error of ARIMA is:  {arima_mse}
 ```
 
 
-
-
-
-
-##Model Specification
-
-##Parameter Estimation
-
-##Model Diagnostics
 
 
 
