@@ -49,17 +49,20 @@ state_forecasts <- state_models %>%
 Creating visualisations for each of the 
 
 ```{r warning=FALSE}
-plot_list <- map2(state_forecasts, state_list, ~{
+map2(state_forecasts, state_list, ~{
+  current_state <- .y %>% pull(state) %>% unique()
+  
   .x %>% 
-    autoplot(filter(.y, date > lubridate::ymd("2012-01-01")))
+    autoplot(filter(.y, date > lubridate::ymd("2012-01-01"))) + 
+    ggtitle(glue::glue("Fires in {current_state}")) +
+    ggthemes::scale_color_fivethirtyeight() +
+    ggthemes::theme_fivethirtyeight()
 })
 ```
 
-```{r warning=FALSE}
-library(patchwork)
 
-wrap_plots(plot_list, ncol = 4)
-```
+
+
 
 
 

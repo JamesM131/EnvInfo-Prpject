@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.5.18)  15 OCT 2019 13:01
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (TeX Live 2016) (preloaded format=pdflatex 2017.5.18)  15 OCT 2019 17:32
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -993,7 +993,7 @@ arning (ext4): destination with the same identifier (name{page.I}) has been alr
 eady used, duplicate ignored
 <to be read again> 
                    \relax 
-l.251  \newpage
+l.252  \newpage
                 [1] (./Report_Formatted.toc
 LaTeX Font Info:    Try loading font information for OT1+lmr on input line 3.
 (/usr/local/texlive/2016/texmf-dist/tex/latex/lm/ot1lmr.fd
@@ -1033,269 +1033,315 @@ File: mt-msb.cfg 2005/06/01 v1.0 microtype config. file: AMS symbols (b) (RS)
 \openout5 = `Report_Formatted.toc'.
 
 [2]
-LaTeX Font Info:    Try loading font information for T1+lmtt on input line 278.
+LaTeX Font Info:    Try loading font information for T1+lmtt on input line 279.
 
 (/usr/local/texlive/2016/texmf-dist/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
 )
 LaTeX Font Info:    Font shape `T1/lmtt/bx/n' in size <10.95> not available
-(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 279.
+(Font)              Font shape `T1/lmtt/b/n' tried instead on input line 280.
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-2-1.pdf, id=91, 469.755pt x 
-326.21875pt>
+<Report_Formatted_files/figure-latex/unnamed-chunk-2-1.pdf, id=101, 469.755pt x
+ 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-2-1.pdf Graphic file (t
 ype pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-2-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-2-1.
-pdf used on input line 313.
+pdf used on input line 314.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
 [1]
-<Report_Formatted_files/figure-latex/unnamed-chunk-2-2.pdf, id=101, 469.755pt x
+<Report_Formatted_files/figure-latex/unnamed-chunk-2-2.pdf, id=111, 469.755pt x
  326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-2-2.pdf Graphic file (t
 ype pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-2-2.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-2-2.
-pdf used on input line 330.
+pdf used on input line 331.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
 [2 <./Report_Formatted_files/figure-latex/unnamed-chunk-2-1.pdf>] [3 <./Report_
 Formatted_files/figure-latex/unnamed-chunk-2-2.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf, id=126, 469.755pt x
+<Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf, id=136, 469.755pt x
  326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf Graphic file (t
 ype pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-3-1.
-pdf used on input line 392.
+pdf used on input line 393.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
-[4] [5 <./Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf>] [6]
-LaTeX Font Info:    Try loading font information for TS1+lmtt on input line 504
-.
-(/usr/local/texlive/2016/texmf-dist/tex/latex/lm/ts1lmtt.fd
-File: ts1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [7] [8] [9]
-<Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf, id=167, 469.755pt 
+[4] [5 <./Report_Formatted_files/figure-latex/unnamed-chunk-3-1.pdf>] [6] [7] [
+8]
+<Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf, id=172, 469.755pt 
 x 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-10-1
-.pdf used on input line 626.
+.pdf used on input line 568.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
-[10 <./Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf, id=180, 437.635pt 
+[9 <./Report_Formatted_files/figure-latex/unnamed-chunk-10-1.pdf>]
+LaTeX Font Info:    Try loading font information for TS1+lmtt on input line 599
+.
+(/usr/local/texlive/2016/texmf-dist/tex/latex/lm/ts1lmtt.fd
+File: ts1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
+)
+<Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf, id=184, 437.635pt 
 x 250.9375pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-11-1
-.pdf used on input line 665.
+.pdf used on input line 607.
 (pdftex.def)             Requested size: 437.6406pt x 250.94069pt.
-[11 <./Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf, id=192, 436.63126p
+[10 <./Report_Formatted_files/figure-latex/unnamed-chunk-11-1.pdf>]
+<Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf, id=198, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-12-1
-.pdf used on input line 677.
+.pdf used on input line 619.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-12-2.pdf, id=193, 440.64626p
+<Report_Formatted_files/figure-latex/unnamed-chunk-12-2.pdf, id=199, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-12-2.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-12-2.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-12-2
-.pdf used on input line 685.
+.pdf used on input line 627.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[12 <./Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf>] [13 <./Repo
+[11 <./Report_Formatted_files/figure-latex/unnamed-chunk-12-1.pdf>] [12 <./Repo
 rt_Formatted_files/figure-latex/unnamed-chunk-12-2.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf, id=218, 436.63126p
+<Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf, id=224, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-14-1
-.pdf used on input line 757.
+.pdf used on input line 699.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
-[14]
-<Report_Formatted_files/figure-latex/unnamed-chunk-14-2.pdf, id=223, 440.64626p
+[13]
+<Report_Formatted_files/figure-latex/unnamed-chunk-14-2.pdf, id=229, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-14-2.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-14-2.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-14-2
-.pdf used on input line 765.
+.pdf used on input line 707.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[15 <./Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf> <./Report_Fo
+[14 <./Report_Formatted_files/figure-latex/unnamed-chunk-14-1.pdf> <./Report_Fo
 rmatted_files/figure-latex/unnamed-chunk-14-2.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf, id=244, 436.63126p
+<Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf, id=250, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-15-1
-.pdf used on input line 796.
+.pdf used on input line 738.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-15-2.pdf, id=245, 440.64626p
+<Report_Formatted_files/figure-latex/unnamed-chunk-15-2.pdf, id=251, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-15-2.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-15-2.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-15-2
-.pdf used on input line 804.
+.pdf used on input line 746.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[16 <./Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf>] [17 <./Repo
+[15 <./Report_Formatted_files/figure-latex/unnamed-chunk-15-1.pdf>] [16 <./Repo
 rt_Formatted_files/figure-latex/unnamed-chunk-15-2.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf, id=271, 436.63126p
+<Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf, id=277, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-16-1
-.pdf used on input line 836.
+.pdf used on input line 778.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-16-2.pdf, id=272, 440.64626p
+<Report_Formatted_files/figure-latex/unnamed-chunk-16-2.pdf, id=278, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-16-2.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-16-2.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-16-2
-.pdf used on input line 844.
+.pdf used on input line 786.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[18 <./Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf> <./Report_Fo
+[17 <./Report_Formatted_files/figure-latex/unnamed-chunk-16-1.pdf> <./Report_Fo
 rmatted_files/figure-latex/unnamed-chunk-16-2.pdf>]
-Overfull \hbox (242.62886pt too wide) in paragraph at lines 873--873
+Overfull \hbox (242.62886pt too wide) in paragraph at lines 816--816
 []\T1/lmtt/m/n/10.95 #  Model not specified, defaulting to automatic modelling 
 of the \TS1/lmtt/m/n/10.95 `\T1/lmtt/m/n/10.95 fires\TS1/lmtt/m/n/10.95 ` \T1/l
 mtt/m/n/10.95 variable. Override this using the model formula.[] 
  []
 
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf, id=293, 459.7175pt
- x 313.17pt>
+<Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf, id=300, 469.755pt 
+x 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-17-1
-.pdf used on input line 889.
-(pdftex.def)             Requested size: 452.99626pt x 308.59132pt.
-[19]
-Overfull \hbox (242.62886pt too wide) in paragraph at lines 906--906
+.pdf used on input line 818.
+(pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
+
+Underfull \hbox (badness 10000) in paragraph at lines 818--822
+[][]
+ []
+
+[18 <./Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf>]
+Overfull \hbox (242.62886pt too wide) in paragraph at lines 835--835
 []\T1/lmtt/m/n/10.95 #  Model not specified, defaulting to automatic modelling 
 of the \TS1/lmtt/m/n/10.95 `\T1/lmtt/m/n/10.95 fires\TS1/lmtt/m/n/10.95 ` \T1/l
 mtt/m/n/10.95 variable. Override this using the model formula.[] 
  []
 
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf, id=301, 436.63126p
+<Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf, id=315, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-18-1
-.pdf used on input line 925.
+.pdf used on input line 844.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
-[20 <./Report_Formatted_files/figure-latex/unnamed-chunk-17-1.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf, id=313, 436.63126p
+
+<Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf, id=316, 436.63126p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-19-1
-.pdf used on input line 938.
+.pdf used on input line 857.
 (pdftex.def)             Requested size: 436.63019pt x 290.08304pt.
-[21 <./Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf, id=326, 440.64626p
+[19 <./Report_Formatted_files/figure-latex/unnamed-chunk-18-1.pdf>]
+<Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf, id=329, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-20-1
-.pdf used on input line 952.
+.pdf used on input line 871.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[22 <./Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf>]
-<Report_Formatted_files/figure-latex/unnamed-chunk-21-1.pdf, id=340, 440.64626p
+[20 <./Report_Formatted_files/figure-latex/unnamed-chunk-19-1.pdf>]
+<Report_Formatted_files/figure-latex/unnamed-chunk-21-1.pdf, id=342, 440.64626p
 t x 290.08376pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-21-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-21-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-21-1
-.pdf used on input line 964.
+.pdf used on input line 883.
 (pdftex.def)             Requested size: 440.66533pt x 290.09631pt.
-[23 <./Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf> <./Report_Fo
-rmatted_files/figure-latex/unnamed-chunk-21-1.pdf>] [24]
-LaTeX Font Info:    Try loading font information for TS1+lmr on input line 1029
-.
+[21 <./Report_Formatted_files/figure-latex/unnamed-chunk-20-1.pdf> <./Report_Fo
+rmatted_files/figure-latex/unnamed-chunk-21-1.pdf>] [22]
+LaTeX Font Info:    Try loading font information for TS1+lmr on input line 948.
+
 (/usr/local/texlive/2016/texmf-dist/tex/latex/lm/ts1lmr.fd
 File: ts1lmr.fd 2009/10/30 v1.6 Font defs for Latin Modern
-) [25] [26]
-<Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf, id=383, 453.695pt 
-x 313.17pt>
+) [23] [24]
+<Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf, id=386, 469.755pt 
+x 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-25-1
-.pdf used on input line 1171.
-(pdftex.def)             Requested size: 452.9739pt x 312.67224pt.
-[27 <./Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf>] [28] [29]
-<Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf, id=406, 469.755pt 
+.pdf used on input line 1050.
+(pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
+[25 <./Report_Formatted_files/figure-latex/unnamed-chunk-25-1.pdf>]
+<Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf, id=400, 469.755pt 
 x 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-26-1
-.pdf used on input line 1305.
+.pdf used on input line 1074.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
 
-<Report_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf, id=407, 469.755pt 
+<Report_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf, id=401, 469.755pt 
 x 326.21875pt>
 File: Report_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf Graphic file (
 type pdf)
 <use Report_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf>
 Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-27-1
-.pdf used on input line 1316.
+.pdf used on input line 1085.
 (pdftex.def)             Requested size: 452.96669pt x 314.56018pt.
-[30 <./Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf>] [31 <./Repo
-rt_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf>] [32]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1470.
-[33] [34]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 1470.
+[26 <./Report_Formatted_files/figure-latex/unnamed-chunk-26-1.pdf>] [27 <./Repo
+rt_Formatted_files/figure-latex/unnamed-chunk-27-1.pdf>] [28]
+<Report_Formatted_files/figure-latex/unnamed-chunk-33-1.pdf, id=430, 322.20375p
+t x 313.17pt>
+File: Report_Formatted_files/figure-latex/unnamed-chunk-33-1.pdf Graphic file (
+type pdf)
+<use Report_Formatted_files/figure-latex/unnamed-chunk-33-1.pdf>
+Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-33-1
+.pdf used on input line 1208.
+(pdftex.def)             Requested size: 322.21278pt x 313.17877pt.
+[29] [30 <./Report_Formatted_files/figure-latex/unnamed-chunk-33-1.pdf>] [31]
+<Report_Formatted_files/figure-latex/unnamed-chunk-35-1.pdf, id=453, 442.65375p
+t x 286.06876pt>
+File: Report_Formatted_files/figure-latex/unnamed-chunk-35-1.pdf Graphic file (
+type pdf)
+<use Report_Formatted_files/figure-latex/unnamed-chunk-35-1.pdf>
+Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-35-1
+.pdf used on input line 1278.
+(pdftex.def)             Requested size: 442.6594pt x 286.07242pt.
+[32 <./Report_Formatted_files/figure-latex/unnamed-chunk-35-1.pdf>]
+<Report_Formatted_files/figure-latex/unnamed-chunk-37-1.pdf, id=465, 366.36874p
+t x 303.1325pt>
+File: Report_Formatted_files/figure-latex/unnamed-chunk-37-1.pdf Graphic file (
+type pdf)
+<use Report_Formatted_files/figure-latex/unnamed-chunk-37-1.pdf>
+Package pdftex.def Info: Report_Formatted_files/figure-latex/unnamed-chunk-37-1
+.pdf used on input line 1314.
+(pdftex.def)             Requested size: 366.37343pt x 303.13638pt.
+[33 <./Report_Formatted_files/figure-latex/unnamed-chunk-37-1.pdf>]
+</Users/jamesmonks/Documents/Uni/EnvInfo-Prpject/assets/State Time Series.png, 
+id=481, 1445.4pt x 903.375pt>
+File: /Users/jamesmonks/Documents/Uni/EnvInfo-Prpject/assets/State Time Series.
+png Graphic file (type png)
+
+<use /Users/jamesmonks/Documents/Uni/EnvInfo-Prpject/assets/State Time Series.p
+ng>
+Package pdftex.def Info: /Users/jamesmonks/Documents/Uni/EnvInfo-Prpject/assets
+/State Time Series.png used on input line 1361.
+(pdftex.def)             Requested size: 452.96558pt x 283.10349pt.
+[34 </Users/jamesmonks/Documents/Uni/EnvInfo-Prpject/assets/State Time Series.p
+ng>]
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 1389.
+[35]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 1389.
 (./Report_Formatted.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1470.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1470.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 1389.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 1389.
 
 Package rerunfilecheck Info: File `Report_Formatted.out' has not changed.
-(rerunfilecheck)             Checksum: 2E0DD323C5068F689F71A14DD8DFEFA3;1872.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1470.
+(rerunfilecheck)             Checksum: 96D9C7CEB560AFAF9912309300246508;2156.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 1389.
  ) 
 Here is how much of TeX's memory you used:
- 15045 strings out of 493014
- 221299 string characters out of 6133351
- 344216 words of memory out of 5000000
- 18233 multiletter control sequences out of 15000+600000
- 50589 words of font info for 74 fonts, out of 8000000 for 9000
+ 15098 strings out of 493014
+ 222873 string characters out of 6133351
+ 345324 words of memory out of 5000000
+ 18256 multiletter control sequences out of 15000+600000
+ 56036 words of font info for 87 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 32i,7n,38p,921b,524s stack positions out of 5000i,500n,10000p,200000b,80000s
-{/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/usr/local
-/texlive/2016/texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/local/texlive/2016/
-texmf-dist/fonts/enc/dvips/lm/lm-mathit.enc}{/usr/local/texlive/2016/texmf-dist
-/fonts/enc/dvips/lm/lm-ec.enc}</usr/local/texlive/2016/texmf-dist/fonts/type1/p
+ 32i,7n,38p,921b,522s stack positions out of 5000i,500n,10000p,200000b,80000s
+{/usr/local/texlive/2016/texmf-dist/fonts/enc/dvips/lm/lm-ec.enc}{/usr/local/
+texlive/2016/texmf-dist/fonts/enc/dvips/lm/lm-ts1.enc}{/usr/local/texlive/2016/
+texmf-dist/fonts/enc/dvips/lm/lm-rm.enc}{/usr/local/texlive/2016/texmf-dist/fon
+ts/enc/dvips/lm/lm-mathit.enc}</usr/local/texlive/2016/texmf-dist/fonts/type1/p
 ublic/lm/lmbx10.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/lm/l
 mbx12.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/lm/lmmi10.pfb>
 </usr/local/texlive/2016/texmf-dist/fonts/type1/public/lm/lmmi8.pfb></usr/local
 /texlive/2016/texmf-dist/fonts/type1/public/lm/lmr10.pfb></usr/local/texlive/20
 16/texmf-dist/fonts/type1/public/lm/lmr12.pfb></usr/local/texlive/2016/texmf-di
 st/fonts/type1/public/lm/lmr8.pfb></usr/local/texlive/2016/texmf-dist/fonts/typ
-e1/public/lm/lmtk10.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/
-lm/lmtt10.pfb>
-Output written on Report_Formatted.pdf (37 pages, 381789 bytes).
+e1/public/lm/lmri10.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/
+lm/lmtk10.pfb></usr/local/texlive/2016/texmf-dist/fonts/type1/public/lm/lmtt10.
+pfb>
+Output written on Report_Formatted.pdf (38 pages, 1602439 bytes).
 PDF statistics:
- 509 PDF objects out of 1000 (max. 8388607)
- 394 compressed objects within 4 object streams
- 76 named destinations out of 1000 (max. 500000)
- 8410 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 562 PDF objects out of 1000 (max. 8388607)
+ 432 compressed objects within 5 object streams
+ 81 named destinations out of 1000 (max. 500000)
+ 10494 words of extra memory for PDF output out of 12000 (max. 10000000)
 

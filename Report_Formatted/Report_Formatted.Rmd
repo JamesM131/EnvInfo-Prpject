@@ -43,7 +43,7 @@ output:
 
 
 ```{r setup, include=FALSE, echo = FALSE, warning = FALSE, fig.align="center"}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
 library(tidyverse)
 library(feasts)
 library(fable)
@@ -63,7 +63,7 @@ fires_all <- read_rds(here::here("data", "fires_clean_all.rds"))
 
 ## The Amazon Dataset
 
-The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
+The dataset "amazon" has been obtained from (Modelli 2019). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
 ```{r}
 fires <- read_rds(here::here("data-raw", "fires_date.rds"))
 head(fires)
@@ -318,7 +318,8 @@ The aggregate amazon fire data will be decomposed in order to analyse the error 
 ```{r}
 fires_all %>% 
   classical_decomposition() %>% 
-  autoplot()
+  autoplot() + 
+  ggthemes::theme_fivethirtyeight()
 ```
 It can be seen that there is a strong seasonal component with two consistent peaks. The overall trend shows an overall increase, though it is not constantly increasing.
 
@@ -400,18 +401,12 @@ Similarly, an \(ARIMA\ (0,0,0)\ (1,0,0)_12\) model will show:
 - a single significant spike at lag 12 in the PACF.
 
 
-In considering the appropriate seasonal orders for a seasonal ARIMA model, attention is restricted to the seasonal lags. The modelling procedure is almost the same as for non-seasonal data, except that it is needed to select seasonal AR and MA terms as well as the non-seasonal components of the model. [cite the website]
-
-
-
-This also trains a seasonal naive model (random process with seasonal component).
-  * This does not make sense?? if season has been removed why would this work?
+In considering the appropriate seasonal orders for a seasonal ARIMA model, attention is restricted to the seasonal lags. The modelling procedure is almost the same as for non-seasonal data, except that it is needed to select seasonal AR and MA terms as well as the non-seasonal components of the model (Hyndman & Athanasopoulos 2018).
 
 
 #### Fable Automatic Modelling
-* Fable can model the data and automatically add back in seasonality and trend, resulting in a holistic forecasting model. 
 
-* Comment here that we are going to use the model created in previous section
+The fable forecasting framework makes it easy to automatically add back in seasonality and trend, resulting in a holistic forecasting model. In the following model creation, the arima(2, 1, 3) in order to make comparisons.
 
 ```{r warning=FALSE}
 fire_models <- fires_all %>% 
@@ -419,9 +414,9 @@ fire_models <- fires_all %>%
   model(
     arima = ARIMA(fires_var), 
     snaive = SNAIVE(fires_var) ,
-    arima213 = ARIMA(fires_var ~ pdq(p = 2, d = 1, q = 3) + PDQ(P = 0, D = 0, Q = 0))
+    arima213 = ARIMA(fires_var ~ pdq(p = 2, d = 1, q = 3) +
+                       PDQ(P = 0, D = 0, Q = 0))
   )
-
 ```
 
 
@@ -458,7 +453,8 @@ fires_decomp %>%
   mutate(type = "Data") %>% 
   bind_rows(forecast_clean) %>% 
   ggplot(aes(x = date,  y = fires, colour = type)) +
-  geom_line()
+  geom_line() + 
+  ggthemes::theme_fivethirtyeight()
 ```
 
 It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
@@ -539,13 +535,82 @@ snaive_prediction <- forecast_data %>%
 ```{r}
 arima_mse <- mean((fires_test$fires - arima_prediction$fires_var)^2)
 snaive_mse <- mean((fires_test$fires - snaive_prediction$fires_var)^2)
-sna
+
 glue::glue("The mean squared error of ARIMA is:  {arima_mse}
            The mean squared error of SNAIVE is: {snaive_mse}")
 ```
 
 
 ## Spatial Analysis
+The forest fire data set has an inherent spatial aspect in the state variable. This state component refers to different geographic regions of Brazil in which the fires have been recorded. The Google maps API has been used to obtain the latitude and longitude of each of these states (Google 2019). The following map is constructed using these data points. 
+
+```{r}
+library(ggmap)
+state_coords <- read_rds(here::here("data", "state_coords.rds"))
+brazil_map <- read_rds(here::here("data", "brazil_map.rds"))
+
+brazil_map %>% 
+  ggmap() + 
+  geom_point(data = state_coords, aes(x = lon, y = lat))
+
+```
+
+These state coordinates can be connected to data in order to do some spatial analysis. In order to do this independently of time, the fires will be aggregated by taking the average for the time period.
+
+```{r}
+library(sp)
+library(gstat)
+
+fires_spatial <- fires_clean %>%
+  as_tibble() %>% 
+  group_by(state) %>% 
+  summarise(fires = mean(fires)) %>% 
+  bind_cols(state_coords)
+coordinates(fires_spatial)=~lon+lat
+
+fires_spatial
+```
+This created spatial object may be interesting for visualisations, however, the level of spatial granularity is very low. This is because only the state in which the fires occurred was recorded, not the exact longitudes and latitudes. It can be seen in the map that the state centres are in some cases extremely far apart, and as such, predictions made using this spatial data can be flawed and likely not informative. 
+
+Despite this fact, the exercise of constructing a variogram and performing ordinary kriging on this data is a useful one that allows for the methods of analysis to be conveyed. 
+
+Now constructing a variogram.
+```{r}
+vg_fires <- variogram(fires ~ lon + lat +
+                          lon^2 + lon*lat + lat^2 + lon^3 + 
+                          lon^2*lat + lon*lat^2 + lat^3 + lon^4+
+                          lon^3*lat + lon^2*lat^2 +
+                          lon*lat^3 + lat^4, data=fires_spatial)
+plot(vg_fires)
+```
+
+Further preparing the data and performing ordinary kriging.
+```{r}
+fires_fit_vg<-fit.variogram(vg_fires, model=vgm(1,"Exp", 0.5,1))
+
+lat <- fires_spatial$lat
+lon <- fires_spatial$lon
+Latitude <- seq(min(lat), max(lat), length=50)
+Longitude <- seq(min(lon), max(lon), length=50)
+
+predict.list <- list(Longitude=Longitude,Latitude=Latitude)
+
+predict.grid <- expand.grid(predict.list)
+
+coordinates(predict.grid) = ~Longitude+Latitude
+
+gridded(predict.grid) = TRUE
+krige_fires <- krige(fires ~1,fires_spatial, predict.grid, model= fires_fit_vg)
+
+```
+
+Visualising the resultant predictions of the kriging. 
+```{r}
+spplot(krige_fires["var1.pred"],main="Prediction of Average Monthly Fire Frequency.")
+```
+
+It can be seen that the predictions tend towards an average of 110 fires. In some areas there are alternate predictions made, but they are sparse and do not deviate much from the point estimates at their centres. 
+
 
 
 
@@ -554,22 +619,25 @@ glue::glue("The mean squared error of ARIMA is:  {arima_mse}
 ### Conclusions
 The mean of the amazon fire occurrence for a month is 2113.152, with a standard deviation of 1278.543. This means that the mean error of the models is quite accurate as it falls within one standard deviation distance from the mean and is approximately 1/3 of the magnitude of the mean. 
 
-It should be noted that the snaive model does not perform as well as the arima model, though still has a comparable accuracy rate. This is likely to fall for longer forecasting horizons.  This is evidenced by the observed growth in prediction interval dependant on time seen in section (something.something).
+It should be noted that the snaive model does not perform as well as the arima model, though still has a comparable accuracy rate. This is likely to fall for longer forecasting horizons.  This is evidenced by the observed growth in prediction interval dependent on time seen in section 3.1.2.
 
 
 ### State-wise analysis
 
-This analysis was conducted on data that was aggregated from all of the individual state time series. This presented the possibility of repeating the forecasting analysis on each of the states independantly, which would control for varaition introduced by inherent differences between states. The resultant analyses were too long to include in this report, and as such the code to complete them has been included as appendix 2. 
+This analysis was conducted on data that was aggregated from all of the individual state time series. This presented the possibility of repeating the forecasting analysis on each of the states independently, which would control for variation introduced by inherent differences between states. The resultant analyses were too long to include in this report, and as such the code to complete them has been included as appendix 2. 
 
 A sample of the forecasting results is shown below:
-```{r}
-
+```{r out.width="100%"}
+knitr::include_graphics(here::here("assets", "State Time Series.png"))
 ```
 
 
 
 ## Spatial
 
+The spatial component of this data was initially promising, as it would have allowed for another vector of analysis and prediction. However, an issue was uncovered in that the observed points were geographically very far apart, and would likely not have any impact on one another. This aspect of the data is useful for visualisation and understanding, however, without more detailed data describing the coordinates in which a fire occurred, prediction based off of spatial coordinates is not viable. 
+
+For the purpose of this report predictions were attempted, however, as mentioned above there is no useful information that is returned. 
 
 
 # References

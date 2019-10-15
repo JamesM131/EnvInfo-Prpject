@@ -29,7 +29,9 @@ fires_date <- fires %>%
   ),
   day = 1) %>%
   mutate(date_month = lubridate::ymd(glue::glue("{year}-{month_clean}-{day}"))) %>%
-  mutate(date_index = yearmonth(date_month))
+  mutate(date_index = yearmonth(date_month)) %>%
+  mutate(state = ifelse(str_detect(state, "Par\xe1"), "Para", state))
+
 
 # Creating the clean fire object
 fires_clean <-
@@ -40,6 +42,7 @@ fires_clean <-
   rename(date = date_index, month = month_clean, fires = number) %>%
   mutate(state = ifelse(str_detect(state, "Par\xe1"), "Para", state)) %>%
   as_tsibble(index = date, key = state)
+
 
 
 fires_clean_all <-
@@ -56,3 +59,4 @@ fires_clean_all <-
 write_rds(fires_clean, here::here("data", "fires_clean.rds"))
 write_rds(fires_clean_all, here::here("data", "fires_clean_all.rds"))
 
+write_rds(fires_date, here::here("data-raw", "fires_date.rds"))

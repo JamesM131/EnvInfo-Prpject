@@ -1,0 +1,48 @@
+---
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Appendix 2: State-wise Modelling
+```{r eval=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(fable)
+fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
+
+state_list <- fires_clean %>% 
+  as_tibble() %>% 
+  group_by(state) %>% 
+  group_split() %>% 
+  map(as_tsibble, index = date)
+
+# Modelling
+state_models <- state_list %>% 
+  map(~{
+    .x %>% 
+      model(
+        arima = ARIMA(fires),
+        snaive = SNAIVE(fires)
+      )
+  })
+
+# Forecasting
+state_forecasts <- state_models %>% 
+  map(forecast, h = "2 years")
+
+# Visualising
+map2(state_forecasts, state_list, ~{
+  current_state <- .y %>% pull(state) %>% unique()
+  
+  .x %>% 
+    autoplot(filter(.y, date > lubridate::ymd("2012-01-01"))) + 
+    ggtitle(glue::glue("Fires in {current_state}")) +
+    ggthemes::scale_color_fivethirtyeight() +
+    ggthemes::theme_fivethirtyeight()
+})
+
+```
+

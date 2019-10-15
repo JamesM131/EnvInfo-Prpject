@@ -17,17 +17,17 @@ library(forecast)
 library(lmtest)
 ```
 
-#Cover page
+# Cover page
 
 
-#Contents page
+# Contents page
 
 
-#Introduction
+# Introduction
 Forest fires are a serious problem for the preservation of the Tropical Forests. Understanding the frequency of forest fires in a time series can help prevent them. Brazil has the largest rainforest on the planet, the Amazon rainforest. This report analyses the frequency of forest fires by the state in which the fire occurred as well as the time or season.
 
 
-##The Amazon Dataset
+## The Amazon Dataset
 The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
 ```{r}
 fires <- read_csv(here::here("data-raw", "amazon.csv"))
@@ -36,7 +36,7 @@ head(fires)
 
 
 
-##Descriptive Statistics
+## Descriptive Statistics
 We begin by visualising the data.
 ```{r}
 fires %>% 
@@ -66,9 +66,9 @@ From the plot of date against the number of forest fires reported it can be seen
 The plot of state against the number of forest fires reported demonstrates the outstanding prevalence of forest fires in Mato Grosso compared to the other states. Whether this is an outlier or error due to measurement or data compilation should be investigated during the data cleaning process.
 
 
-#Data Cleaning
+# Data Cleaning
 
-##The Problematic Month
+## The Problematic Month
 It should be noted that the month terms in the data set are in Portuguese and as such are not passable to standard date conversion functions. These must be translated in order to connect accurate dates to the data. There is an issue with this however, as the term that describes March uses non-standard characters and cannot be directly converted.
 
 
@@ -104,7 +104,7 @@ fires_date <- fires %>%
 head(fires_date)
 ```
 
-##Creating a time aware data frame
+## Creating a time aware data frame
 As this is monthly data, we want to explicitly encode this in the data set using the yearmonth function to create an index. A key is given as there is data repeated accross states.
 
 
@@ -154,10 +154,10 @@ fires %>%
 
 
 
-#Data Analysis
+# Data Analysis
 
 
-##Decomposition of Amazon data
+## Decomposition of Amazon data
 The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model.
 ```{r}
 fires_all %>% 
@@ -167,7 +167,7 @@ fires_all %>%
 It can be seen that there is a strong seasonal component with two consistent peaks. The overall trend shows an overall increase, though it is not constantly increasing.
 
 
-###Deseasoning
+### Deseasoning
 We begin by deseasoning the data. A year comprises of four seasons and each season is approximately three months in length. Thus to summarise the data for each season, we first calculate the moving average fire counts of three consecutive months (MA). The centered moving average (CMA) is calculated by the average of two consecutive MAs:
 ```{r}
 fires_a <- read_rds(here::here("data", "fires_clean_all.rds"))
@@ -337,7 +337,7 @@ fit_B <- arima213
 In our final model ARIMA(2,1,3), the ma1 term is insignificant however the other terms highly significant. Both the ACF and PACF plots are also within the confidence interval for all lag values. Call this model fitB.
 
 
-##Forecasting
+## Forecasting
 Using out two models (fitA and fitB), the fires count for December 2017 has been forecasted:
 ```{r}
 prediction_A <- (1700.243 + 3.371*240)*m_alt[1]
@@ -350,7 +350,7 @@ prediction_B
 fitA forecasted the fires count to be roughly 2222.30 which is within the 95% prediction interval forecasted using fitB. The point forecast using fitB was roughly 1915.30. 
 
 
-###Random component
+### Random component
 Now the random term can be examined in closer detail. 
 ```{r}
 fires_decomp <- fires_all %>% 
@@ -384,7 +384,7 @@ The lags mentioned above seem to be the most influential, however, these spikes 
 
 The results after looking at the ACF and PACF do not immediately point to a specific model, as there is a large number of lags that are influential and there seems to be something of a cyclic or seasonal effect in fucntion values. 
 
-##Modelling the Aggregate Time Series
+## Modelling the Aggregate Time Series
 Noting that there is not a model that is immediately obvious after observing both the PACF and ACF, the decomposed data will be modelled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
 
 ```{r}
@@ -437,7 +437,7 @@ This also trains a seasonal naive model (random process with seasonal component)
   * This does not make sense?? if season has been removed why would this work?
 
 
-##Forecasting
+## Forecasting
 
 ```{r}
 fires_decomp_forecast <- fires_decomp_models %>% 
@@ -462,7 +462,7 @@ fires_decomp %>%
 
 It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
 
-##Modelling Original Data
+## Modelling Original Data
 * Fable can model the data and automatically add back in seasonality and trend, resulting in a wholistic forecasting model. 
 
 ```{r warning=FALSE}
@@ -555,14 +555,14 @@ glue::glue("The mean squared error of ARIMA is:  {arima_mse}
 
 
 
-#Conclusion
+# Conclusion
 
-#Disicussion
-
-
+# Disicussion
 
 
-#References
+
+
+# References
 
 https://otexts.com/fpp2/seasonal-arima.html
 
