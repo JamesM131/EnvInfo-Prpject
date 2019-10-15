@@ -1,0 +1,581 @@
+---
+# Change the title etc. to your needs:
+title: "Forest Fires In Brazil"
+subtitle: "1998 - 2017"
+author: "Joshua Ham 18618046, Alexis Kim 19024383, James Monks 18500484"
+course: 'Environmental Informatics'
+field: 301035
+#logo: examples/logo.png  # insert path to your logo
+referee: 'Dr. Than Pe'
+
+
+abstract: |
+  Forest fires are a serious problem for the preservation of the Tropical Forests. Understanding the frequency of forest fires in a time series can help prevent them. Brazil has the largest rainforest on the planet, the Amazon rainforest. This report analyses the frequency of forest fires by the state in which the fire occurred as well as the time or season. Forecasts were made for the next 2 and 5 years of Brazilian forest fires. 
+
+  
+
+# Insert/Change name of bibliogrphic files:
+#bibliography: examples/bib.bib
+#csl: examples/apa6.csl  # citation style file
+
+
+# Change the following lines only if you know what you are doing:
+date: '`r format(Sys.Date(), "%d\\. %m\\. %Y")`'  # today
+fontfamily: lmodern
+fontsize: 11pt
+graphics: null
+papersize: 
+geometry: margin=1.0in
+classoption:
+  - a4paper
+  - oneside
+  #- more options here, see rmarkdown documentation 
+lang: en
+toc: yes
+numbersections: yes
+UP_title: yes
+UP_subtitle: yes
+shaded_quote: no
+output: 
+  yart::yart
+---
+
+
+
+```{r setup, include=FALSE, echo = FALSE, warning = FALSE, fig.align="center"}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(feasts)
+library(fable)
+library(ggplot2)
+library(tsibble)
+library(lubridate)
+library(ggthemes)
+library(here)
+library(forecast)
+library(lmtest)
+fires_clean <- read_rds(here::here("data", "fires_clean.rds"))
+fires_all <- read_rds(here::here("data", "fires_clean_all.rds"))
+```
+
+
+# Introduction
+
+## The Amazon Dataset
+
+The dataset "amazon" has been obtained from (cite). It allows the assessment of the evolution of fires over the period of approximately 10 years (from 1998 to 2017) as well as the regions where they were concentrated. The legal Amazon comprises the states of Acre, Amapá, Pará, Amazonas, Rondonia, Roraima, and part of Mato Grosso, Tocantins, and Maranhão.
+```{r}
+fires <- read_rds(here::here("data-raw", "fires_date.rds"))
+head(fires)
+```
+
+
+
+## Descriptive Statistics
+We begin by visualising the data.
+```{r}
+fires %>%
+  count(date, wt = number) %>%
+  ggplot(aes(x = date, y = n)) +
+  geom_point() + 
+  geom_line() +
+  ggthemes::theme_fivethirtyeight()
+
+fires %>%
+  as_tibble() %>% 
+  group_by(state) %>%
+  summarise(fires = sum(number, nana.rm = TRUE)) %>% 
+  mutate(state=forcats::fct_reorder(state,fires)) %>%
+  ggplot(aes(x = state, y = fires))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  ggthemes :: theme_fivethirtyeight() +
+  ggtitle("Fires in Brazilian States", subtitle = "1998 - 2017")
+```
+
+
+From the plot of date against the number of forest fires reported it can be seen that forest fires were the most prevalent during 2003 with over 42500 counts of forest fires. 2016 follows close by with a count slightly below 42500 fires. Over the years, the prevalence of forest fires appear to increase closer to 40000 forest fires.
+
+
+The plot of state against the number of forest fires reported demonstrates the outstanding prevalence of forest fires in Mato Grosso compared to the other states. Whether this is an outlier or error due to measurement or data compilation should be investigated during the data cleaning process.
+
+
+# Data Cleaning
+
+
+In the original data set, the month variable was in Portuguese. Portuguese is not parsable by standard date conversion functions, and hence the months were translated. This included having to deal with non-standard characters that could not be manually translated, and needed to be extracted as references from the original data. 
+
+
+Exploring the data has revealed some states have duplicated data for the same instance of time. In the case of Alagoas these were exact duplicates and it was simple to take only one of each occurrence. In other cases, however, the duplicates were drastically different, specifically the states of Mato Grosso, Rio and Paraiba. As this data was collected from the Brazilian government website by (Kaggle Reference), the source was not contacted to clarify this (due to language and access constraints) and these states were excluded from analysis.
+
+
+The standard data frame format lends itself well to visualisation and other data manipulation tasks, however is not aware inherently of any temporal component. The time series (ts) data format does have this 'time aware' feature, however it does not have the adaptability of the data frame. It is for this reason that the tsibble object exists, allowing a time index to be specified on a standard data frame along with a key to specify separate time series.
+
+For detailed information on data cleaning, see appendix 1. 
+
+The resultant clean data can be seen below:
+
+```{r}
+fires <- fires_clean
+
+fires %>%
+  as_tibble() %>% 
+  group_by(state) %>% 
+  summarise(fires = sum(fires)) %>% 
+  mutate(state=forcats::fct_reorder(state,fires)) %>%
+  ggplot(aes(x = state, y = fires))+
+  geom_bar(stat = "identity")+
+  coord_flip()+
+  ggthemes :: theme_fivethirtyeight() + 
+  ggtitle("Fires in Brazilian States", subtitle = "1998 - 2017")
+```
+
+
+
+# Data Analysis
+## Temporal Analysis
+
+### Modelling The Time Series
+
+This analysis has been broken into 3 different components. The first is manual decomposition and manual modelling of data. This is to show the theory behind the forecasts made. The second component uses the 'fable' forecasting framework for decomposition and modelling of the time series in order to show a traditional workflow utilising this framework. The third component utilises the automatic decomposition and 're-composition' functionality provided by fable, which allows for plots and forecasts to be made in the context of the original data, leading to a more understandable output.
+
+#### Manual Decomposition and Modelling 
+We begin by deseasoning the data. A year comprises of four seasons and each season is approximately three months in length. Thus to summarise the data for each season, we first calculate the moving average fire counts of three consecutive months (MA). The centered moving average (CMA) is calculated by the average of two consecutive MAs:
+```{r}
+fires_a <- read_rds(here::here("data", "fires_clean_all.rds"))
+
+MA <- NULL
+CMA <- NULL
+
+for(i in 1:238){
+  MA[i+1] <- (fires_a$fires[i] + fires_a$fires[i+1]
+              + fires_a$fires[i+2])/3
+}
+
+for(i in 1:237){
+  CMA[i+2] <- (MA[i+1] + MA[i+2])/2
+}
+```
+
+
+Now we divide the fire counts by the centred moving averages and call it 'n_alt':
+```{r}
+n_alt <- NULL
+
+for(i in 3:238){
+  n_alt[i] <- fires_a$fires[i]/CMA[i]
+}
+
+n_alt[239] <- NA
+n_alt[which(is.nan(n_alt))] <- 0
+```
+
+
+Now we build a new data set "fires_b" which contains the original cleaned data set, a month column, the moving average and centered moving average values as well as the new fire counts in n_alt:
+```{r}
+month_nr <- NULL
+for(i in 1:239){
+  month_nr[i] <- i%%12
+}
+
+fires_b <- as.data.frame(cbind(as_tibble(fires_a), month_nr, MA, CMA, n_alt))
+head(fires_b)
+```
+
+
+For each season, the relevant months are collected together:
+```{r}
+winter <- subset(fires_b,
+                 fires_b$month == 12 |
+                   fires_b$month == 1 |
+                   fires_b$month == 2)
+spring <- subset(fires_b,
+                 fires_b$month == 3 |
+                   fires_b$month == 4 |
+                   fires_b$month == 5)
+summer <- subset(fires_b,
+                 fires_b$month == 6 |
+                   fires_b$month == 7 |
+                   fires_b$month == 8)
+autumn <- subset(fires_b,
+                 fires_b$month == 9 |
+                   fires_b$month == 10 |
+                   fires_b$month == 11)
+```
+
+
+Now we calculate the average for each season as well as the sum of these average values:
+```{r}
+m_alt_winter <- mean(winter$n_alt, na.rm = TRUE)
+m_alt_spring <- mean(spring$n_alt, na.rm = TRUE)
+m_alt_summer <- mean(summer$n_alt, na.rm = TRUE)
+m_alt_autumn <- mean(autumn$n_alt, na.rm = TRUE)
+
+m_alt <- c(m_alt_winter, m_alt_spring, m_alt_summer, m_alt_autumn)
+m_alt_sum <- sum(m_alt)
+```
+
+
+The proportion of each season's average is calculated as a decimal by dividing with the sum. Then these proportion are used to replace the m_alt values of each season with the fires count divided by the proportion:
+```{r}
+for(i in 1:4){
+  m_alt[i] <- m_alt[i]*4/m_alt_sum
+}
+
+for(i in 1:length(winter$fires)){
+  winter[i,7] <- winter$fires[i]/m_alt[1]
+}
+
+for(i in 1:length(spring$fires)){
+  spring[i,7] <- spring$fires[i]/m_alt[2]
+}
+
+for(i in 1:length(summer$fires)){
+  summer[i,7] <- summer$fires[i]/m_alt[3]
+}
+
+for(i in 1:length(autumn$fires)){
+  autumn[i,7] <- autumn$fires[i]/m_alt[4]
+}
+```
+
+
+We now build the completely deseasoned dataset "fires_des":
+```{r}
+fires_des <- as.data.frame(rbind(winter,spring,summer,autumn))
+fires_des$index <- as.numeric(row.names(fires_des))
+
+fires_des %>%
+  count(date, wt = V7) %>%
+  ggplot(aes(x = date, y = n)) +
+  geom_point() + 
+  geom_line() + 
+  ggthemes::theme_fivethirtyeight()
+```
+
+
+Now we model the deseasoned data to enable forecasting. We begin with a linear model, called fitA:
+```{r}
+fitA <- lm(fires_des$fires ~ fires_des$index)
+summary(fitA)
+plot(fires_des$index, fires_des$fires)
+```
+
+
+The summary statistics show significance in the p-values. However, let's go further and find a better model. Checking the ACF and PACF plots:
+```{r}
+library(lmtest)
+acf(fires_des$fires, lag.max = 50)
+pacf(fires_des$fires)
+```
+
+
+The ACF plot shows spikes outside the confidence interval until lag 50. The PACF plot shows spikes at lags 2, 3 and 6. Try ARIMA models:
+```{r}
+arima101 <- arima(fires_des$fires, order = c(1,0,1))
+coeftest(arima101)
+
+arima202 <- arima(fires_des$fires, order = c(2,0,2))
+coeftest(arima202)
+```
+
+
+The ARIMA(1,0,1) model seems significant but not the ARIMA(2,0,2). We implement differencing into our model:
+```{r}
+arima111 <- arima(fires_des$fires, order = c(1,1,1))
+coeftest(arima111)
+acf(arima202$residuals)
+pacf(arima202$residuals)
+```
+
+
+Although the coeftest function shows significance for our model, the ACF and PACF plots suggest we require more AR and MA:
+```{r}
+arima212 <- arima(fires_des$fires, order = c(2,1,2))
+coeftest(arima212)
+acf(arima212$residuals)
+pacf(arima212$residuals)
+```
+
+
+Now the coeftest shows significance and our PACF plot seems perfect! However the ACF plot suggests we need more MA:
+```{r}
+arima213 <- arima(fires_des$fires, order = c(2,1,3))
+coeftest(arima213)
+acf(arima213$residuals)
+pacf(arima213$residuals)
+fit_B <- arima213
+```
+
+
+In our final model ARIMA(2,1,3), the ma1 term is insignificant however the other terms highly significant. Both the ACF and PACF plots are also within the confidence interval for all lag values. Call this model fitB.
+
+
+
+#### Fable Decomposition Modelling
+
+The aggregate amazon fire data will be decomposed in order to analyse the error terms of the time series model.
+```{r}
+fires_all %>% 
+  classical_decomposition() %>% 
+  autoplot()
+```
+It can be seen that there is a strong seasonal component with two consistent peaks. The overall trend shows an overall increase, though it is not constantly increasing.
+
+
+Now the random term can be examined in closer detail. 
+```{r}
+fires_decomp <- fires_all %>% 
+  classical_decomposition() %>% 
+  na.omit()
+
+fires_ts <- ts(fires_decomp$random)
+acf(fires_ts)
+```
+
+The ACF of this data shows an alternating ACF, following what appears to follow a wave form shape. This shape has some peaks (both positive and negative), for a high number of lags (see 3, 4, 14, 23). It would be interesting to see this with an increased number of lags:
+```{r}
+acf(fires_ts, lag.max = 60)
+```
+
+After displaying the ACF for up to 60 lags, it seems that this alternating wave pattern continues, but 23 is the last lag that has any significant influence. 
+
+
+Now observing the PACF.
+```{r}
+pacf(fires_ts)
+```
+
+The PACF function for this time series shows some significant lags at 3, 4, 8, 10 etc. This should be examined in the same way as the ACF (through viewing a larger number of lags):
+```{r}
+pacf(fires_ts, lag.max = 60)
+```
+
+The lags mentioned above seem to be the most influential, however, these spikes can be seen in the later lags as well. The overall pattern shows a diminishing alternating effect that trends towards an exaggerated version of the ACF function. 
+
+
+The results after looking at the ACF and PACF do not immediately point to a specific model, as there is a large number of lags that are influential and there seems to be something of a cyclic or seasonal effect in function values. 
+
+Noting that there is not a model that is immediately obvious after observing both the PACF and ACF, the decomposed data will be modeled using a general framework. The `fable` framework, allows modelling on time series to be done while optimising the accuracy of results. This is done by allowing the values of the specified models to vary over a set range (for ARIMA it is generally 1:6). The best model is then selected. 
+
+```{r}
+fires_decomp_models <- fires_decomp %>% 
+  rename(fires_original = fires, fires_var = random) %>% 
+  as_tsibble() %>% 
+  model(
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var)
+  )
+
+fires_decomp_models$arima
+```
+
+This creates a seasonal ARIMA model with parameters (2, 0, 0) (0, 0, 1).
+
+
+A seasonal ARIMA model is formed by including additional seasonal terms in the ARIMA models:
+
+
+\(ARIMA\ (p,d,q)\ (P,D,Q)_m\)
+
+
+where \((p,d,q)\) and \((P,D,Q)_m\) denotes the non-seasonal part and the seasonal part of the model, respectively. \(m\) denotes the number of observations per year.
+
+
+The seasonal part of the model consists of terms that are similar to the non-seasonal components of the model, but involves backshifts of the seasonal period. The seasonal part of an AR or MA model will be seen in the seasonal lags of the PACF and ACF. For example, an \(ARIMA\ (0,0,0)\ (0,0,1)_12\) model will show:
+
+
+- a spike at lag 12 in the ACF but no other significant spikes;
+
+
+- exponential decay in the seasonal lags of the PACF (that is, at lags 12, 24, 36, ...).
+
+
+Similarly, an \(ARIMA\ (0,0,0)\ (1,0,0)_12\) model will show:
+
+
+- exponential decay in the seasonal lags of the ACF;
+
+
+- a single significant spike at lag 12 in the PACF.
+
+
+In considering the appropriate seasonal orders for a seasonal ARIMA model, attention is restricted to the seasonal lags. The modelling procedure is almost the same as for non-seasonal data, except that it is needed to select seasonal AR and MA terms as well as the non-seasonal components of the model. [cite the website]
+
+
+
+This also trains a seasonal naive model (random process with seasonal component).
+  * This does not make sense?? if season has been removed why would this work?
+
+
+#### Fable Automatic Modelling
+* Fable can model the data and automatically add back in seasonality and trend, resulting in a holistic forecasting model. 
+
+* Comment here that we are going to use the model created in previous section
+
+```{r warning=FALSE}
+fire_models <- fires_all %>% 
+  rename(fires_var = fires) %>% 
+  model(
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var) ,
+    arima213 = ARIMA(fires_var ~ pdq(p = 2, d = 1, q = 3) + PDQ(P = 0, D = 0, Q = 0))
+  )
+
+```
+
+
+### Forecasting
+
+#### Forecasting Manual
+Using out two models (fitA and fitB), the fires count for December 2017 has been forecasted:
+```{r}
+prediction_A <- (1700.243 + 3.371*240)*m_alt[1]
+prediction_A
+prediction_B <- forecast(fit_B, h = 1)
+prediction_B
+```
+
+
+fitA forecasted the fires count to be roughly 2222.30 which is within the 95% prediction interval forecasted using fitB. The point forecast using fitB was roughly 1915.30. 
+
+
+```{r}
+fires_decomp_forecast <- fires_decomp_models %>% 
+  fabletools::forecast(h = "2 years") 
+
+forecast_clean <- fires_decomp_forecast %>% 
+  filter(.model == "arima") %>% 
+  as_tibble() %>% 
+  select(date, fires = fires_var) %>% 
+  mutate(type = "Model")
+
+
+fires_decomp %>% 
+  select(- fires) %>% 
+  select(date, fires = random) %>% 
+  filter(date >= lubridate::ymd("20100101")) %>% 
+  mutate(type = "Data") %>% 
+  bind_rows(forecast_clean) %>% 
+  ggplot(aes(x = date,  y = fires, colour = type)) +
+  geom_line()
+```
+
+It can be seen that this model trends towards 0 and has little variation comparatively to the original data. 
+
+
+#### Fable Automatic Forecasting
+```{r}
+forecast_2 <- fire_models %>% 
+  fabletools::forecast(h = "2 years")
+
+forecast_5 <- fire_models %>% 
+  fabletools::forecast(h = "5 years")
+
+forecast_2 %>% 
+  autoplot(filter(rename(fires_all, fires_var = fires), date > lubridate::ymd("2012-01-01"))) + 
+  ggthemes::scale_color_fivethirtyeight() + 
+  ggthemes::theme_fivethirtyeight()
+```
+
+
+```{r warning=FALSE}
+forecast_5 %>% 
+  autoplot(filter(rename(fires_all, fires_var = fires), date > lubridate::ymd("2012-01-01"))) + 
+  ggthemes::scale_color_fivethirtyeight() + 
+  ggthemes::theme_fivethirtyeight()
+```
+
+It can be seen that the arima and snaive models stay relatively close together, though the prediction interval for arima seems to be constant with time whereas the snaive model is increasing with time. The prediction interval of the arima213 model exhibits the same consistent and tight behaviour as the seasonal arima. However, the model itself trends towards the mean of the overall time series. 
+
+### Forecast Validation and Testing
+
+First lets have a look at the time range for the fires data.
+```{r}
+fires_all %>% 
+  pull(date) %>% 
+  range()
+```
+
+It goes from January of 1998 to November of 2017. In the previous examples, 2 years were forecast in order to look at the modelling process. This same amount of time will be forecast to assess the models. 
+
+Before assessing the models, the training data needs to be obtained by filtering anything after November 2015.
+
+```{r}
+fires_train <- fires_all %>% 
+  filter(date <= lubridate::ymd("2015-11-01"))
+
+fires_test <- fires_all %>% 
+  filter(date > lubridate::ymd("2015-11-01"))
+
+```
+
+The models will be trained on this data.
+```{r}
+train_models <- fires_train %>% 
+  rename(fires_var = fires) %>% 
+  model(
+    arima = ARIMA(fires_var), 
+    snaive = SNAIVE(fires_var)
+  )
+```
+
+
+The remaining data will now be forecast for. The predicted data will be stored in a results object, which will be compared against the ground-truth to obtain an accuracy metric.
+
+```{r}
+forecast_data <- train_models %>% 
+  fabletools::forecast(h = "2 years")
+
+arima_prediction <- forecast_data %>% 
+  filter(.model == "arima")
+
+snaive_prediction <- forecast_data %>% 
+  filter(.model == "snaive")
+
+```
+
+
+```{r}
+arima_mse <- mean((fires_test$fires - arima_prediction$fires_var)^2)
+snaive_mse <- mean((fires_test$fires - snaive_prediction$fires_var)^2)
+sna
+glue::glue("The mean squared error of ARIMA is:  {arima_mse}
+           The mean squared error of SNAIVE is: {snaive_mse}")
+```
+
+
+## Spatial Analysis
+
+
+
+# Discussion
+## Temporal
+### Conclusions
+The mean of the amazon fire occurrence for a month is 2113.152, with a standard deviation of 1278.543. This means that the mean error of the models is quite accurate as it falls within one standard deviation distance from the mean and is approximately 1/3 of the magnitude of the mean. 
+
+It should be noted that the snaive model does not perform as well as the arima model, though still has a comparable accuracy rate. This is likely to fall for longer forecasting horizons.  This is evidenced by the observed growth in prediction interval dependant on time seen in section (something.something).
+
+
+### State-wise analysis
+
+This analysis was conducted on data that was aggregated from all of the individual state time series. This presented the possibility of repeating the forecasting analysis on each of the states independantly, which would control for varaition introduced by inherent differences between states. The resultant analyses were too long to include in this report, and as such the code to complete them has been included as appendix 2. 
+
+A sample of the forecasting results is shown below:
+```{r}
+
+```
+
+
+
+## Spatial
+
+
+
+# References
+
+Hyndman RJ, Athanasopoulos G 2018, Forecasting: Principles and Practice *Monash University, Australia* 
+
+Modelli LG 2019, Forest Fires in Brazil, *Kaggle Inc*, https://www.kaggle.com/gustavomodelli/forest-fires-in-brazil 
+
+Google Maps 2019
